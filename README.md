@@ -10,6 +10,7 @@ Magxxic is a high-performance, direct-to-MX email delivery tool designed for res
 - **Multi-threaded Engine**: Fast concurrent delivery using a thread pool.
 - **Rotation Logic**: Rotates subjects, HTML templates, and sender addresses for every recipient.
 - **Delay & Pause**: Configurable random delay between emails and pause between batches to avoid rate limiting.
+- **Dynamic Tags**: Support for dynamic placeholders like `[[TIME]]`, `[[DATE]]`, `[[DEVICE]]`, etc.
 - **URL/Email Encryption**: Built-in support for obfuscating URLs and recipient emails (Base64/Hex) in templates.
 - **Easy Configuration**: Manage all settings via a JSON configuration file.
 
@@ -63,8 +64,19 @@ In `config.json`, you can configure the following flow control settings:
 - `batch_size`: Number of emails to send before a mandatory pause.
 - `batch_pause_seconds`: Length of the pause (in seconds) after each batch.
 
-### URL and Email Encryption
-Magxxic supports placeholders in your HTML templates and subjects that are automatically replaced with encoded versions:
+### Dynamic Tags and Encryption
+Magxxic supports various placeholders in your HTML templates and subjects that are automatically replaced for each recipient:
+
+#### Dynamic Information
+- `[[TIME]]`: Current time (HH:MM:S).
+- `[[DATE]]`: Current date (YYYY-MM-DD).
+- `[[DEVICE]]`: Randomly selected device name (e.g., iPhone, Windows PC).
+- `[[OS]]`: Randomly selected operating system (e.g., iOS 16, Windows 11).
+- `[[USER_NAME]]`: Local part of the recipient's email address.
+- `[[USER_DOMAIN]]`: Domain part of the recipient's email address.
+- `[[RANDOM_STR:length]]`: Generates a random alphanumeric string of the specified length (default is 8).
+
+#### URL and Email Encryption
 - `[[EMAIL]]`: Recipient's email address.
 - `[[EMAIL_BASE64]]`: Recipient's email address in Base64.
 - `[[EMAIL_HEX]]`: Recipient's email address in Hex.

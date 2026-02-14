@@ -1,6 +1,7 @@
 import smtplib
 import socks
 import socket
+from urllib.parse import urlparse
 
 class SOCKS5SMTP(smtplib.SMTP):
     """
@@ -33,9 +34,10 @@ class SOCKS5SMTP(smtplib.SMTP):
         else:
             return socket.create_connection((host, port), timeout)
 
-def send_direct_email(mx_host, sender_email, recipient_email, msg_string, proxy=None, ehlo_host="backstage.co.jp"):
+def send_direct_email(mx_host, sender_email, recipient_email, msg_data, proxy=None, ehlo_host="backstage.co.jp"):
     """
     Sends an email directly to an MX host, optionally via a proxy.
+    msg_data can be string or bytes.
     """
     proxy_host = None
     proxy_port = None
@@ -44,20 +46,19 @@ def send_direct_email(mx_host, sender_email, recipient_email, msg_string, proxy=
 
     if proxy:
         try:
-            temp_proxy = proxy
-            if "://" in temp_proxy:
-                temp_proxy = temp_proxy.split("://")[1]
-
-            if "@" in temp_proxy:
-                user_pass, host_port = temp_proxy.split("@")
-                proxy_host, proxy_port = host_port.split(":")
-                proxy_user, proxy_pass = user_pass.split(":")
+            # Add scheme if missing for urlparse
+            if not proxy.startswith("socks5://"):
+                proxy_str = f"socks5://{proxy}"
             else:
-                proxy_host, proxy_port = temp_proxy.split(":")
+                proxy_str = proxy
 
-            proxy_port = int(proxy_port)
+            parsed = urlparse(proxy_str)
+            proxy_host = parsed.hostname
+            proxy_port = parsed.port
+            proxy_user = parsed.username
+            proxy_pass = parsed.password
         except Exception:
-            pass # Use as-is or default to no proxy if parsing fails
+            pass
 
     try:
         # Use port 25 for direct-to-MX
@@ -65,8 +66,9 @@ def send_direct_email(mx_host, sender_email, recipient_email, msg_string, proxy=
                         proxy_host=proxy_host, proxy_port=proxy_port,
                         proxy_user=proxy_user, proxy_pass=proxy_pass) as server:
             server.set_debuglevel(0)
-            server.helo(ehlo_host)
-            server.sendmail(sender_email, [recipient_email], msg_string)
+            server.ehlo(ehlo_host)
+            # sendmail handles both string and bytes
+            server.sendmail(sender_email, [recipient_email], msg_data)
         return True, "Delivered"
     except Exception as e:
         return False, str(e)

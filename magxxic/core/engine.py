@@ -6,6 +6,8 @@ import time
 import base64
 import binascii
 import re
+import string
+from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -28,7 +30,7 @@ class CampaignEngine:
         self.max_workers = config.get('threads', 10)
         self.ehlo_host = config.get('ehlo_host', 'backstage.co.jp')
 
-        # New settings for delay and pause
+        # flow control settings
         self.delay_min = config.get('delay_min', 0)
         self.delay_max = config.get('delay_max', 0)
         self.batch_size = config.get('batch_size', 10)
@@ -41,17 +43,38 @@ class CampaignEngine:
         }
         self.lock = threading.Lock()
 
-    def _obfuscate_content(self, content, recipient):
+    def _process_placeholders(self, content, recipient):
         """
-        Replace placeholders with obfuscated/encrypted content.
-        Supports:
-        [[BASE64:text]]
-        [[HEX:text]]
-        [[EMAIL]]
-        [[EMAIL_BASE64]]
-        [[EMAIL_HEX]]
+        Replace placeholders with dynamic content and obfuscated/encrypted content.
         """
-        # Replace basic email placeholders
+        # --- Dynamic Tags ---
+        now = datetime.now()
+        content = content.replace("[[TIME]]", now.strftime("%H:%M:%S"))
+        content = content.replace("[[DATE]]", now.strftime("%Y-%m-%d"))
+
+        try:
+            user_parts = recipient.split('@')
+            if len(user_parts) == 2:
+                user_name, user_domain = user_parts
+                content = content.replace("[[USER_NAME]]", user_name)
+                content = content.replace("[[USER_DOMAIN]]", user_domain)
+        except Exception:
+            pass
+
+        devices = ["iPhone", "Android Phone", "Windows PC", "MacBook", "iPad", "Linux Desktop"]
+        content = content.replace("[[DEVICE]]", random.choice(devices))
+
+        oss = ["iOS 16", "Android 13", "Windows 11", "macOS Ventura", "Ubuntu 22.04"]
+        content = content.replace("[[OS]]", random.choice(oss))
+
+        # Random string: [[RANDOM_STR:12]]
+        def rand_str_repl(match):
+            length_str = match.group(1)
+            length = int(length_str) if length_str else 8
+            return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+        content = re.sub(r"\[\[RANDOM_STR:?(\d*)\]\]", rand_str_repl, content)
+
+        # --- Obfuscation/Encryption ---
         content = content.replace("[[EMAIL]]", recipient)
 
         email_b64 = base64.b64encode(recipient.encode()).decode()
@@ -60,7 +83,7 @@ class CampaignEngine:
         email_hex = binascii.hexlify(recipient.encode()).decode()
         content = content.replace("[[EMAIL_HEX]]", email_hex)
 
-        # Replace dynamic placeholders
+        # Dynamic obfuscation placeholders
         def b64_repl(match):
             return base64.b64encode(match.group(1).encode()).decode()
         content = re.sub(r"\[\[BASE64:(.*?)\]\]", b64_repl, content)
@@ -72,16 +95,16 @@ class CampaignEngine:
         return content
 
     def _prepare_message(self, recipient, subject, template_content):
-        # Apply obfuscation to subject and template
-        subject = self._obfuscate_content(subject, recipient)
-        template_content = self._obfuscate_content(template_content, recipient)
+        # Apply placeholders to subject and template
+        final_subject = self._process_placeholders(subject, recipient)
+        final_template = self._process_placeholders(template_content, recipient)
 
         msg = MIMEMultipart('alternative')
-        msg['Subject'] = subject
+        msg['Subject'] = final_subject
         msg['From'] = random.choice(self.senders)
         msg['To'] = recipient
 
-        part = MIMEText(template_content, 'html')
+        part = MIMEText(final_template, 'html')
         msg.attach(part)
 
         msg_bytes = msg.as_bytes()
@@ -126,7 +149,7 @@ class CampaignEngine:
                         mx_host,
                         sender_email,
                         recipient,
-                        msg_bytes.decode('utf-8', errors='ignore'),
+                        msg_bytes, # Pass as bytes to SMTP client
                         proxy,
                         ehlo_host=self.ehlo_host
                     )

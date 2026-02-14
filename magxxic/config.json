@@ -1,0 +1,13 @@
+{
+    "sender_domain": "backstage.co.jp",
+    "dkim_selector": "default",
+    "threads": 5,
+    "batch_size": 10,
+    "ehlo_host": "backstage.co.jp",
+    "senders": [
+        "info@backstage.co.jp",
+        "postmaster@backstage.co.jp",
+        "matsumoto@prairiedog.co.jp",
+        "asako@uanstudio.com"
+    ]
+}

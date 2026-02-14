@@ -131,7 +131,9 @@ def main():
             'ehlo_host': app_config.get('ehlo_host', 'backstage.co.jp'),
             'delay_min': app_config.get('delay_min', 0),
             'delay_max': app_config.get('delay_max', 0),
-            'batch_pause_seconds': app_config.get('batch_pause_seconds', 0)
+            'batch_pause_seconds': app_config.get('batch_pause_seconds', 0),
+            'attach_pdf': app_config.get('attach_pdf', False),
+            'pdf_filename_format': app_config.get('pdf_filename_format', 'Document.pdf')
         })
 
         print(f"\033[32m[GO] LAUNCHING CAMPAIGN for {len(recipients)} recipients\033[0m")

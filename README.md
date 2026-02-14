@@ -12,6 +12,7 @@ Magxxic is a high-performance, direct-to-MX email delivery tool designed for res
 - **Delay & Pause**: Configurable random delay between emails and pause between batches to avoid rate limiting.
 - **Dynamic Tags**: Support for dynamic placeholders like `[[TIME]]`, `[[DATE]]`, `[[DEVICE]]`, etc.
 - **URL/Email Encryption**: Built-in support for obfuscating URLs and recipient emails (Base64/Hex) in templates.
+- **HTML to PDF Attachment**: Automatically convert your HTML letters into PDF attachments.
 - **Easy Configuration**: Manage all settings via a JSON configuration file.
 
 ## Prerequisites
@@ -63,9 +64,14 @@ In `config.json`, you can configure the following flow control settings:
 - `delay_min` and `delay_max`: Set a random delay (in seconds) between each email delivery.
 - `batch_size`: Number of emails to send before a mandatory pause.
 - `batch_pause_seconds`: Length of the pause (in seconds) after each batch.
+- `attach_pdf`: Boolean to enable/disable HTML to PDF attachment conversion.
+- `pdf_filename_format`: Template for the attached PDF filename (supports tags).
+
+### HTML to PDF Conversion
+When `attach_pdf` is enabled in `config.json`, Magxxic converts the generated HTML body (with all tags replaced) into a PDF file and attaches it to the email. This allows the PDF to "auto grab" the recipient's details just like the email body.
 
 ### Dynamic Tags and Encryption
-Magxxic supports various placeholders in your HTML templates and subjects that are automatically replaced for each recipient:
+Magxxic supports various placeholders in your HTML templates, subjects, and PDF filenames that are automatically replaced for each recipient:
 
 #### Dynamic Information
 - `[[TIME]]`: Current time (HH:MM:S).

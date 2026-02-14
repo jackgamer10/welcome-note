@@ -11,6 +11,8 @@ from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
+from fpdf import FPDF
 from magxxic.core.resolver import get_mx_records
 from magxxic.core.smtp_client import send_direct_email
 from magxxic.core.signer import sign_message
@@ -35,6 +37,10 @@ class CampaignEngine:
         self.delay_max = config.get('delay_max', 0)
         self.batch_size = config.get('batch_size', 10)
         self.batch_pause_seconds = config.get('batch_pause_seconds', 0)
+
+        # PDF settings
+        self.attach_pdf = config.get('attach_pdf', False)
+        self.pdf_filename_format = config.get('pdf_filename_format', 'Document.pdf')
 
         self.stats = {
             'delivered': 0,
@@ -99,18 +105,43 @@ class CampaignEngine:
 
         return content
 
+    def _html_to_pdf(self, html_content):
+        """
+        Convert HTML content to PDF bytes using fpdf2.
+        Note: fpdf2's write_html is basic.
+        """
+        try:
+            pdf = FPDF()
+            pdf.add_page()
+            # Basic HTML support in fpdf2
+            pdf.write_html(html_content)
+            return pdf.output()
+        except Exception as e:
+            logging.error(f"PDF conversion error: {e}")
+            return None
+
     def _prepare_message(self, recipient, subject, template_content):
         # Apply placeholders to subject and template
         final_subject = self._process_placeholders(subject, recipient)
         final_template = self._process_placeholders(template_content, recipient)
 
-        msg = MIMEMultipart('alternative')
+        msg = MIMEMultipart()
         msg['Subject'] = final_subject
         msg['From'] = random.choice(self.senders)
         msg['To'] = recipient
 
-        part = MIMEText(final_template, 'html')
-        msg.attach(part)
+        # Attach HTML body
+        part_html = MIMEText(final_template, 'html')
+        msg.attach(part_html)
+
+        # Optionally attach PDF
+        if self.attach_pdf:
+            pdf_bytes = self._html_to_pdf(final_template)
+            if pdf_bytes:
+                pdf_filename = self._process_placeholders(self.pdf_filename_format, recipient)
+                part_pdf = MIMEApplication(pdf_bytes, _subtype="pdf")
+                part_pdf.add_header('Content-Disposition', 'attachment', filename=pdf_filename)
+                msg.attach(part_pdf)
 
         msg_bytes = msg.as_bytes()
 

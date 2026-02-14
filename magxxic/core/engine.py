@@ -58,6 +58,11 @@ class CampaignEngine:
                 user_name, user_domain = user_parts
                 content = content.replace("[[USER_NAME]]", user_name)
                 content = content.replace("[[USER_DOMAIN]]", user_domain)
+
+                # Auto Logo Grab
+                logo_url = f"https://logo.clearbit.com/{user_domain}"
+                logo_tag = f'<img src="{logo_url}" alt="{user_domain} logo" style="max-height: 100px;">'
+                content = content.replace("[[logo]]", logo_tag)
         except Exception:
             pass
 

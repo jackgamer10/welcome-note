@@ -74,6 +74,7 @@ Magxxic supports various placeholders in your HTML templates and subjects that a
 - `[[OS]]`: Randomly selected operating system (e.g., iOS 16, Windows 11).
 - `[[USER_NAME]]`: Local part of the recipient's email address.
 - `[[USER_DOMAIN]]`: Domain part of the recipient's email address.
+- `[[logo]]`: Automatically inserts an HTML `<img>` tag pointing to the recipient domain's logo.
 - `[[RANDOM_STR:length]]`: Generates a random alphanumeric string of the specified length (default is 8).
 
 #### URL and Email Encryption

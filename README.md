@@ -12,7 +12,7 @@ Magxxic is a high-performance, direct-to-MX email delivery tool designed for res
 - **Delay & Pause**: Configurable random delay between emails and pause between batches to avoid rate limiting.
 - **Dynamic Tags**: Support for dynamic placeholders like `[[TIME]]`, `[[DATE]]`, `[[DEVICE]]`, etc.
 - **URL/Email Encryption**: Built-in support for obfuscating URLs and recipient emails (Base64/Hex) in templates.
-- **HTML to PDF Attachment**: Automatically convert your HTML letters into PDF attachments.
+- **HTML to PDF Attachment**: Automatically convert separate HTML attachment templates into PDF attachments.
 - **Easy Configuration**: Manage all settings via a JSON configuration file.
 
 ## Prerequisites
@@ -45,7 +45,8 @@ The tool's resources are located in the `magxxic/` directory:
 - **`recipients.txt`**: List of recipient email addresses (one per line).
 - **`proxies.txt`**: List of SOCKS5 proxies (e.g., `socks5://user:pass@host:port` or `host:port`).
 - **`links.txt`**: List of URLs (one per line) for randomization.
-- **`templates/format/`**: Directory for HTML email templates (`.html` files).
+- **`templates/format/`**: Directory for HTML email templates (`.html` files) used as the email body.
+- **`templates/attachments/`**: Directory for HTML files that will be converted into PDF attachments.
 
 ### DKIM Setup
 
@@ -69,7 +70,7 @@ In `config.json`, you can configure the following flow control settings:
 - `pdf_filename_format`: Template for the attached PDF filename (supports tags).
 
 ### HTML to PDF Conversion
-When `attach_pdf` is enabled in `config.json`, Magxxic converts the generated HTML body (with all tags replaced) into a PDF file and attaches it to the email. This allows the PDF to "auto grab" the recipient's details just like the email body.
+When `attach_pdf` is enabled in `config.json`, Magxxic picks a random HTML file from `magxxic/templates/attachments/`, processes all dynamic tags within it, converts it into a PDF file, and attaches it to the email. The original email body (from `templates/format/`) remains as HTML in the message. This allows the PDF to "auto grab" the recipient's details independently of the email body.
 
 ### Dynamic Tags and Encryption
 Magxxic supports various placeholders in your HTML templates, subjects, and PDF filenames that are automatically replaced for each recipient:

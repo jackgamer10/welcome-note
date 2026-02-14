@@ -1,18 +1,18 @@
 {
-    "sender_domain": "backstage.co.jp",
+    "sender_domain": "example.com",
     "dkim_selector": "default",
     "threads": 5,
     "batch_size": 10,
-    "ehlo_host": "backstage.co.jp",
+    "ehlo_host": "example.com",
     "delay_min": 1,
     "delay_max": 5,
     "batch_pause_seconds": 30,
     "attach_pdf": true,
     "pdf_filename_format": "Document_[[RANDOM_STR:6]].pdf",
     "senders": [
-        "info@backstage.co.jp",
-        "postmaster@backstage.co.jp",
-        "matsumoto@prairiedog.co.jp",
-        "asako@uanstudio.com"
+        "info@example.com",
+        "support@example.com",
+        "billing@example.com",
+        "noreply@example.com"
     ]
 }

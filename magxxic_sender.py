@@ -74,6 +74,7 @@ def main():
 
         # Load resources
         template_dir = os.path.join(base_dir, 'templates', 'format')
+        attachment_template_dir = os.path.join(base_dir, 'templates', 'attachments')
 
         subjects = load_list(os.path.join(base_dir, 'subjects.txt'))
         recipients = load_list(os.path.join(base_dir, 'recipients.txt'))
@@ -85,6 +86,7 @@ def main():
             return
 
         templates = load_templates(template_dir)
+        attachment_templates = load_templates(attachment_template_dir)
 
         print_banner(version="2.2.1")
 
@@ -93,13 +95,20 @@ def main():
         print(f"\033[32m{' Magxxic V2.2.1 - FUNCTIONAL PROXY DIRECT-TO-MX ':=^85}\033[0m")
         print("\033[32mMODE: PROXY DIRECT-TO-MX (No SMTP Relay)\033[0m")
         print(f"  Proxy: {current_proxy}")
-        print(f"  EHLO: {app_config.get('ehlo_host', 'backstage.co.jp')}")
+        print(f"  EHLO: {app_config.get('ehlo_host', 'example.com')}")
         print(f"SENDERS: {len(subjects)} subjects loaded")
-        print(f"TEMPLATES: {len(templates)} loaded")
+        print(f"TEMPLATES: {len(templates)} letters loaded")
         for t_name, _ in templates[:2]:
             print(f"    format/{t_name}")
         if len(templates) > 2:
             print(f"    ... and {len(templates) - 2} more")
+
+        if attachment_templates:
+            print(f"ATTACHMENT TEMPLATES: {len(attachment_templates)} loaded")
+            for t_name, _ in attachment_templates[:2]:
+                print(f"    attachments/{t_name}")
+            if len(attachment_templates) > 2:
+                print(f"    ... and {len(attachment_templates) - 2} more")
 
         print(f"RECIPIENTS: {len(recipients)} loaded")
         print("ROTATION: Enabled (Subject & Template)")
@@ -115,7 +124,7 @@ def main():
         dkim_key_path = os.path.join(base_dir, 'dkim_private.pem')
         if os.path.exists(dkim_key_path):
             dkim_config = {
-                'domain': app_config.get('sender_domain', 'backstage.co.jp'),
+                'domain': app_config.get('sender_domain', 'example.com'),
                 'selector': app_config.get('dkim_selector', 'default'),
                 'private_key_path': dkim_key_path
             }
@@ -123,14 +132,15 @@ def main():
         engine = CampaignEngine({
             'subjects': subjects,
             'templates': templates,
+            'attachment_templates': attachment_templates,
             'recipients': recipients,
             'proxies': proxies,
             'links': links,
-            'senders': app_config.get('senders', ["info@backstage.co.jp"]),
+            'senders': app_config.get('senders', ["info@example.com"]),
             'dkim': dkim_config,
             'threads': app_config.get('threads', 10),
             'batch_size': app_config.get('batch_size', 20),
-            'ehlo_host': app_config.get('ehlo_host', 'backstage.co.jp'),
+            'ehlo_host': app_config.get('ehlo_host', 'example.com'),
             'delay_min': app_config.get('delay_min', 0),
             'delay_max': app_config.get('delay_max', 0),
             'batch_pause_seconds': app_config.get('batch_pause_seconds', 0),

@@ -34,7 +34,7 @@ class SOCKS5SMTP(smtplib.SMTP):
         else:
             return socket.create_connection((host, port), timeout)
 
-def send_direct_email(mx_host, sender_email, recipient_email, msg_data, proxy=None, ehlo_host="backstage.co.jp"):
+def send_direct_email(mx_host, sender_email, recipient_email, msg_data, proxy=None, ehlo_host="example.com"):
     """
     Sends an email directly to an MX host, optionally via a proxy.
     msg_data can be string or bytes.

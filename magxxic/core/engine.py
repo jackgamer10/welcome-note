@@ -24,14 +24,15 @@ class CampaignEngine:
     def __init__(self, config):
         self.subjects = config.get('subjects', [])
         self.templates = config.get('templates', [])
+        self.attachment_templates = config.get('attachment_templates', [])
         self.recipients = config.get('recipients', [])
         self.proxies = config.get('proxies', [])
         self.links = config.get('links', [])
-        self.senders = config.get('senders', ["info@backstage.co.jp"])
+        self.senders = config.get('senders', ["info@example.com"])
         self.dkim_config = config.get('dkim', {})
 
         self.max_workers = config.get('threads', 10)
-        self.ehlo_host = config.get('ehlo_host', 'backstage.co.jp')
+        self.ehlo_host = config.get('ehlo_host', 'example.com')
 
         # flow control settings
         self.delay_min = config.get('delay_min', 0)
@@ -96,7 +97,7 @@ class CampaignEngine:
             param = ''.join(random.choices(string.ascii_lowercase, k=2))
             val = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
             return f"?{param}={val}"
-        content = content.replace("[[RAND_QUERY]]", rand_query_repl(None))
+        content = re.sub(r"\[\[RAND_QUERY\]\]", rand_query_repl, content)
 
         # --- Obfuscation/Encryption ---
         content = content.replace("[[EMAIL]]", recipient)
@@ -133,7 +134,7 @@ class CampaignEngine:
             logging.error(f"PDF conversion error: {e}")
             return None
 
-    def _prepare_message(self, recipient, subject, template_content):
+    def _prepare_message(self, recipient, subject, template_content, attachment_template_content=None):
         # Apply placeholders to subject and template
         final_subject = self._process_placeholders(subject, recipient)
         final_template = self._process_placeholders(template_content, recipient)
@@ -147,9 +148,10 @@ class CampaignEngine:
         part_html = MIMEText(final_template, 'html')
         msg.attach(part_html)
 
-        # Optionally attach PDF
-        if self.attach_pdf:
-            pdf_bytes = self._html_to_pdf(final_template)
+        # Optionally attach PDF (from a separate attachment template)
+        if self.attach_pdf and attachment_template_content:
+            final_attachment_html = self._process_placeholders(attachment_template_content, recipient)
+            pdf_bytes = self._html_to_pdf(final_attachment_html)
             if pdf_bytes:
                 pdf_filename = self._process_placeholders(self.pdf_filename_format, recipient)
                 part_pdf = MIMEApplication(pdf_bytes, _subtype="pdf")
@@ -185,9 +187,14 @@ class CampaignEngine:
 
             subject = random.choice(self.subjects) if self.subjects else "No Subject"
             template_name, template_content = random.choice(self.templates) if self.templates else ("None", "No Template")
+
+            attachment_template_content = None
+            if self.attachment_templates:
+                _, attachment_template_content = random.choice(self.attachment_templates)
+
             proxy = random.choice(self.proxies) if self.proxies else None
 
-            sender_email, msg_bytes = self._prepare_message(recipient, subject, template_content)
+            sender_email, msg_bytes = self._prepare_message(recipient, subject, template_content, attachment_template_content)
 
             success = False
             last_error = "Unknown"

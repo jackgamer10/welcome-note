@@ -44,6 +44,7 @@ The tool's resources are located in the `magxxic/` directory:
 - **`subjects.txt`**: List of subject lines (one per line) to rotate.
 - **`recipients.txt`**: List of recipient email addresses (one per line).
 - **`proxies.txt`**: List of SOCKS5 proxies (e.g., `socks5://user:pass@host:port` or `host:port`).
+- **`links.txt`**: List of URLs (one per line) for randomization.
 - **`templates/format/`**: Directory for HTML email templates (`.html` files).
 
 ### DKIM Setup
@@ -81,6 +82,8 @@ Magxxic supports various placeholders in your HTML templates, subjects, and PDF 
 - `[[USER_NAME]]`: Local part of the recipient's email address.
 - `[[USER_DOMAIN]]`: Domain part of the recipient's email address.
 - `[[logo]]`: Automatically inserts an HTML `<img>` tag pointing to the recipient domain's logo.
+- `[[RANDOM_LINK]]`: Selects a random URL from `links.txt`.
+- `[[RAND_QUERY]]`: Generates a random query string (e.g., `?id=abc123`).
 - `[[RANDOM_STR:length]]`: Generates a random alphanumeric string of the specified length (default is 8).
 
 #### URL and Email Encryption

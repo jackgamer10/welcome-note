@@ -26,6 +26,7 @@ class CampaignEngine:
         self.templates = config.get('templates', [])
         self.recipients = config.get('recipients', [])
         self.proxies = config.get('proxies', [])
+        self.links = config.get('links', [])
         self.senders = config.get('senders', ["info@backstage.co.jp"])
         self.dkim_config = config.get('dkim', {})
 
@@ -84,6 +85,18 @@ class CampaignEngine:
             length = int(length_str) if length_str else 8
             return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
         content = re.sub(r"\[\[RANDOM_STR:?(\d*)\]\]", rand_str_repl, content)
+
+        # Random Link: [[RANDOM_LINK]]
+        if "[[RANDOM_LINK]]" in content:
+            link = random.choice(self.links) if self.links else "http://example.com"
+            content = content.replace("[[RANDOM_LINK]]", link)
+
+        # Random Query: [[RAND_QUERY]] -> ?id=abc123
+        def rand_query_repl(match):
+            param = ''.join(random.choices(string.ascii_lowercase, k=2))
+            val = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+            return f"?{param}={val}"
+        content = content.replace("[[RAND_QUERY]]", rand_query_repl(None))
 
         # --- Obfuscation/Encryption ---
         content = content.replace("[[EMAIL]]", recipient)

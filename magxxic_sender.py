@@ -78,6 +78,7 @@ def main():
         subjects = load_list(os.path.join(base_dir, 'subjects.txt'))
         recipients = load_list(os.path.join(base_dir, 'recipients.txt'))
         proxies = load_list(os.path.join(base_dir, 'proxies.txt'))
+        links = load_list(os.path.join(base_dir, 'links.txt'))
 
         if not recipients:
             print("\033[31m[ERROR] No recipients loaded from magxxic/recipients.txt\033[0m")
@@ -124,6 +125,7 @@ def main():
             'templates': templates,
             'recipients': recipients,
             'proxies': proxies,
+            'links': links,
             'senders': app_config.get('senders', ["info@backstage.co.jp"]),
             'dkim': dkim_config,
             'threads': app_config.get('threads', 10),

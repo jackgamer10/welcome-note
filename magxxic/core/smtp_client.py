@@ -33,7 +33,7 @@ class SOCKS5SMTP(smtplib.SMTP):
         else:
             return socket.create_connection((host, port), timeout)
 
-def send_direct_email(mx_host, sender_email, recipient_email, msg_string, proxy=None):
+def send_direct_email(mx_host, sender_email, recipient_email, msg_string, proxy=None, ehlo_host="backstage.co.jp"):
     """
     Sends an email directly to an MX host, optionally via a proxy.
     """
@@ -65,7 +65,7 @@ def send_direct_email(mx_host, sender_email, recipient_email, msg_string, proxy=
                         proxy_host=proxy_host, proxy_port=proxy_port,
                         proxy_user=proxy_user, proxy_pass=proxy_pass) as server:
             server.set_debuglevel(0)
-            server.helo("backstage.co.jp")
+            server.helo(ehlo_host)
             server.sendmail(sender_email, [recipient_email], msg_string)
         return True, "Delivered"
     except Exception as e:

@@ -127,7 +127,8 @@ def main():
             'senders': app_config.get('senders', ["info@backstage.co.jp"]),
             'dkim': dkim_config,
             'threads': app_config.get('threads', 10),
-            'batch_size': app_config.get('batch_size', 20)
+            'batch_size': app_config.get('batch_size', 20),
+            'ehlo_host': app_config.get('ehlo_host', 'backstage.co.jp')
         })
 
         print(f"\033[32m[GO] LAUNCHING CAMPAIGN for {len(recipients)} recipients\033[0m")

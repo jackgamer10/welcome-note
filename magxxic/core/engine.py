@@ -17,6 +17,7 @@ class CampaignEngine:
         self.dkim_config = config.get('dkim', {})
 
         self.max_workers = config.get('threads', 10)
+        self.ehlo_host = config.get('ehlo_host', 'backstage.co.jp')
 
         self.stats = {
             'delivered': 0,
@@ -66,7 +67,14 @@ class CampaignEngine:
         last_error = "Unknown"
         # Try top MX hosts
         for mx_host in mx_hosts[:2]:
-            success, last_error = send_direct_email(mx_host, sender_email, recipient, msg_bytes.decode('utf-8', errors='ignore'), proxy)
+            success, last_error = send_direct_email(
+                mx_host,
+                sender_email,
+                recipient,
+                msg_bytes.decode('utf-8', errors='ignore'),
+                proxy,
+                ehlo_host=self.ehlo_host
+            )
             if success:
                 break
 

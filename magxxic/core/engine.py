@@ -2,6 +2,10 @@ import random
 import threading
 import logging
 import os
+import time
+import base64
+import binascii
+import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -24,6 +28,12 @@ class CampaignEngine:
         self.max_workers = config.get('threads', 10)
         self.ehlo_host = config.get('ehlo_host', 'backstage.co.jp')
 
+        # New settings for delay and pause
+        self.delay_min = config.get('delay_min', 0)
+        self.delay_max = config.get('delay_max', 0)
+        self.batch_size = config.get('batch_size', 10)
+        self.batch_pause_seconds = config.get('batch_pause_seconds', 0)
+
         self.stats = {
             'delivered': 0,
             'failed': 0,
@@ -31,7 +41,41 @@ class CampaignEngine:
         }
         self.lock = threading.Lock()
 
+    def _obfuscate_content(self, content, recipient):
+        """
+        Replace placeholders with obfuscated/encrypted content.
+        Supports:
+        [[BASE64:text]]
+        [[HEX:text]]
+        [[EMAIL]]
+        [[EMAIL_BASE64]]
+        [[EMAIL_HEX]]
+        """
+        # Replace basic email placeholders
+        content = content.replace("[[EMAIL]]", recipient)
+
+        email_b64 = base64.b64encode(recipient.encode()).decode()
+        content = content.replace("[[EMAIL_BASE64]]", email_b64)
+
+        email_hex = binascii.hexlify(recipient.encode()).decode()
+        content = content.replace("[[EMAIL_HEX]]", email_hex)
+
+        # Replace dynamic placeholders
+        def b64_repl(match):
+            return base64.b64encode(match.group(1).encode()).decode()
+        content = re.sub(r"\[\[BASE64:(.*?)\]\]", b64_repl, content)
+
+        def hex_repl(match):
+            return binascii.hexlify(match.group(1).encode()).decode()
+        content = re.sub(r"\[\[HEX:(.*?)\]\]", hex_repl, content)
+
+        return content
+
     def _prepare_message(self, recipient, subject, template_content):
+        # Apply obfuscation to subject and template
+        subject = self._obfuscate_content(subject, recipient)
+        template_content = self._obfuscate_content(template_content, recipient)
+
         msg = MIMEMultipart('alternative')
         msg['Subject'] = subject
         msg['From'] = random.choice(self.senders)
@@ -54,6 +98,10 @@ class CampaignEngine:
 
     def _process_recipient(self, recipient, callback=None):
         try:
+            # Apply delay if configured
+            if self.delay_max > 0:
+                time.sleep(random.uniform(self.delay_min, self.delay_max))
+
             domain = recipient.split('@')[1]
             mx_hosts = get_mx_records(domain)
 
@@ -103,12 +151,21 @@ class CampaignEngine:
             if callback: callback(recipient, False, str(e), None, None, None)
 
     def run(self, callback=None):
-        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            futures = [executor.submit(self._process_recipient, r, callback) for r in self.recipients]
-            for future in as_completed(futures):
-                try:
-                    future.result()
-                except Exception as e:
-                    logging.error(f"Thread execution error: {e}")
+        # Process in batches to implement batch pause
+        for i in range(0, len(self.recipients), self.batch_size):
+            batch = self.recipients[i:i + self.batch_size]
+
+            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                futures = [executor.submit(self._process_recipient, r, callback) for r in batch]
+                for future in as_completed(futures):
+                    try:
+                        future.result()
+                    except Exception as e:
+                        logging.error(f"Thread execution error: {e}")
+
+            # Batch pause
+            if i + self.batch_size < len(self.recipients) and self.batch_pause_seconds > 0:
+                print(f"\033[33m[PAUSE] Pausing for {self.batch_pause_seconds} seconds between batches...\033[0m")
+                time.sleep(self.batch_pause_seconds)
 
         return self.stats

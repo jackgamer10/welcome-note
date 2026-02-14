@@ -9,6 +9,8 @@ Magxxic is a high-performance, direct-to-MX email delivery tool designed for res
 - **DKIM Signing**: Automatically signs outgoing messages for trust verification.
 - **Multi-threaded Engine**: Fast concurrent delivery using a thread pool.
 - **Rotation Logic**: Rotates subjects, HTML templates, and sender addresses for every recipient.
+- **Delay & Pause**: Configurable random delay between emails and pause between batches to avoid rate limiting.
+- **URL/Email Encryption**: Built-in support for obfuscating URLs and recipient emails (Base64/Hex) in templates.
 - **Easy Configuration**: Manage all settings via a JSON configuration file.
 
 ## Prerequisites
@@ -36,7 +38,7 @@ setup.bat
 
 The tool's resources are located in the `magxxic/` directory:
 
-- **`config.json`**: Main configuration for sender domain, DKIM selector, thread count, and EHLO host.
+- **`config.json`**: Main configuration for sender domain, DKIM selector, thread count, EHLO host, and flow control (delay/pause).
 - **`subjects.txt`**: List of subject lines (one per line) to rotate.
 - **`recipients.txt`**: List of recipient email addresses (one per line).
 - **`proxies.txt`**: List of SOCKS5 proxies (e.g., `socks5://user:pass@host:port` or `host:port`).
@@ -52,6 +54,25 @@ If you have OpenSSL installed, you can generate a 1024-bit RSA private key with 
 openssl genrsa -out magxxic/dkim_private.pem 1024
 ```
 Make sure the `sender_domain` and `dkim_selector` in `config.json` match the DKIM TXT record on your domain's DNS.
+
+## Advanced Features
+
+### Delay and Pause
+In `config.json`, you can configure the following flow control settings:
+- `delay_min` and `delay_max`: Set a random delay (in seconds) between each email delivery.
+- `batch_size`: Number of emails to send before a mandatory pause.
+- `batch_pause_seconds`: Length of the pause (in seconds) after each batch.
+
+### URL and Email Encryption
+Magxxic supports placeholders in your HTML templates and subjects that are automatically replaced with encoded versions:
+- `[[EMAIL]]`: Recipient's email address.
+- `[[EMAIL_BASE64]]`: Recipient's email address in Base64.
+- `[[EMAIL_HEX]]`: Recipient's email address in Hex.
+- `[[BASE64:your_text]]`: Encodes "your_text" into Base64.
+- `[[HEX:your_text]]`: Encodes "your_text" into Hex.
+
+Example use in a template:
+`<a href="http://example.com/login?u=[[EMAIL_BASE64]]">Click here</a>`
 
 ## Usage
 

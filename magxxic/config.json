@@ -4,6 +4,9 @@
     "threads": 5,
     "batch_size": 10,
     "ehlo_host": "backstage.co.jp",
+    "delay_min": 1,
+    "delay_max": 5,
+    "batch_pause_seconds": 30,
     "senders": [
         "info@backstage.co.jp",
         "postmaster@backstage.co.jp",

@@ -128,7 +128,10 @@ def main():
             'dkim': dkim_config,
             'threads': app_config.get('threads', 10),
             'batch_size': app_config.get('batch_size', 20),
-            'ehlo_host': app_config.get('ehlo_host', 'backstage.co.jp')
+            'ehlo_host': app_config.get('ehlo_host', 'backstage.co.jp'),
+            'delay_min': app_config.get('delay_min', 0),
+            'delay_max': app_config.get('delay_max', 0),
+            'batch_pause_seconds': app_config.get('batch_pause_seconds', 0)
         })
 
         print(f"\033[32m[GO] LAUNCHING CAMPAIGN for {len(recipients)} recipients\033[0m")

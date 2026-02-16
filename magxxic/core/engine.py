@@ -49,6 +49,9 @@ class CampaignEngine:
         self.special_email = config.get('special_email', "")
         self.special_email_interval = config.get('special_email_interval', 0)
 
+        # IP hiding
+        self.hide_ip = config.get('hide_ip', True)
+
         self.stats = {
             'delivered': 0,
             'failed': 0,
@@ -202,6 +205,13 @@ class CampaignEngine:
                 _, attachment_template_content = random.choice(self.attachment_templates)
 
             proxy = random.choice(self.proxies) if self.proxies else None
+
+            # Enforce IP hiding
+            if self.hide_ip and not proxy:
+                with self.lock:
+                    self.stats['failed'] += 1
+                if callback: callback(recipient, False, "IP-Hiding enabled but no proxy available", subject, template_name, None)
+                return
 
             sender_email, msg_bytes = self._prepare_message(recipient, subject, template_content, attachment_template_content)
 

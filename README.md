@@ -64,6 +64,7 @@ Make sure the `sender_domain` and `dkim_selector` in `config.json` match the DKI
 ### Delay and Pause
 In `config.json`, you can configure the following flow control settings:
 - `delay_min` and `delay_max`: Set a random delay (in seconds) between each email delivery.
+- `hide_ip`: Boolean to ensure your real IP is hidden by requiring SOCKS5 proxy usage.
 - `dkim_enabled`: Boolean to enable or disable DKIM signing.
 - `dkim_sign_mime`: Boolean to enable/disable signing of MIME headers (`MIME-Version`, `Content-Type`).
 - `batch_size`: Number of emails to send before a mandatory pause.
@@ -128,6 +129,8 @@ You can override configuration settings directly from the command line:
 - `-p PROB`, `--prob PROB`: Set the attachment probability (0-100).
 - `--dkim`: Force enable DKIM signing.
 - `--no-dkim`: Force disable DKIM signing.
+- `--hide-ip`: Force enable IP hiding (requires at least one proxy in `proxies.txt`).
+- `--show-ip`: Force disable IP hiding (allows direct connection from your IP if no proxy is available).
 - `--dkim-mime`: Force enable signing of MIME headers.
 - `--no-dkim-mime`: Force disable signing of MIME headers.
 

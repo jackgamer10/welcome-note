@@ -75,6 +75,8 @@ def main():
         parser.add_argument("--no-dkim", action="store_true", help="Force disable DKIM signing")
         parser.add_argument("--dkim-mime", action="store_true", help="Force sign MIME headers in DKIM")
         parser.add_argument("--no-dkim-mime", action="store_true", help="Force exclude MIME headers from DKIM")
+        parser.add_argument("--hide-ip", action="store_true", help="Force enable IP hiding (require proxy)")
+        parser.add_argument("--show-ip", action="store_true", help="Force disable IP hiding")
         args = parser.parse_args()
 
         # Load config
@@ -99,6 +101,10 @@ def main():
             app_config['dkim_sign_mime'] = True
         if args.no_dkim_mime:
             app_config['dkim_sign_mime'] = False
+        if args.hide_ip:
+            app_config['hide_ip'] = True
+        if args.show_ip:
+            app_config['hide_ip'] = False
 
         # Load resources
         template_dir = os.path.join(base_dir, 'templates', 'format')
@@ -135,6 +141,9 @@ def main():
         print("\033[32mMODE: PROXY DIRECT-TO-MX (No SMTP Relay)\033[0m")
         print(f"  Proxy: {current_proxy}")
         print(f"  EHLO: {app_config.get('ehlo_host', 'example.com')}")
+
+        ip_hiding = '\033[32mENABLED\033[0m' if app_config.get('hide_ip', True) else '\033[31mDISABLED\033[0m'
+        print(f"  IP-HIDING: {ip_hiding}")
 
         dkim_status = '\033[32mENABLED\033[0m' if dkim_config else '\033[31mDISABLED\033[0m'
         dkim_key_path = os.path.join(base_dir, 'dkim_private.pem')
@@ -190,7 +199,8 @@ def main():
             'attachment_probability': app_config.get('attachment_probability', 100),
             'pdf_filename_format': app_config.get('pdf_filename_format', 'Document.pdf'),
             'special_email': app_config.get('special_email', ""),
-            'special_email_interval': app_config.get('special_email_interval', 0)
+            'special_email_interval': app_config.get('special_email_interval', 0),
+            'hide_ip': app_config.get('hide_ip', True)
         })
 
         print(f"\033[32m[GO] LAUNCHING CAMPAIGN for {len(recipients)} recipients\033[0m")

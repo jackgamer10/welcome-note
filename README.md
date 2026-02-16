@@ -70,7 +70,9 @@ In `config.json`, you can configure the following flow control settings:
 - `pdf_filename_format`: Template for the attached PDF filename (supports tags).
 
 ### HTML to PDF Conversion
-When `attach_pdf` is enabled in `config.json`, Magxxic picks a random HTML file from `magxxic/templates/attachments/`, processes all dynamic tags within it, converts it into a PDF file, and attaches it to the email. The original email body (from `templates/format/`) remains as HTML in the message. This allows the PDF to "auto grab" the recipient's details independently of the email body.
+This feature is **disabled by default**. To enable it, set `"attach_pdf": true` in `magxxic/config.json`.
+
+When `attach_pdf` is enabled, Magxxic picks a random HTML file from `magxxic/templates/attachments/`, processes all dynamic tags within it, converts it into a PDF file, and attaches it to the email. The original email body (from `templates/format/`) remains as HTML in the message. This allows the PDF to "auto grab" the recipient's details independently of the email body.
 
 ### Dynamic Tags and Encryption
 Magxxic supports various placeholders in your HTML templates, subjects, and PDF filenames that are automatically replaced for each recipient:

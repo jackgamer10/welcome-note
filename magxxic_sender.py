@@ -96,6 +96,7 @@ def main():
         print("\033[32mMODE: PROXY DIRECT-TO-MX (No SMTP Relay)\033[0m")
         print(f"  Proxy: {current_proxy}")
         print(f"  EHLO: {app_config.get('ehlo_host', 'example.com')}")
+        print(f"  PDF Attachments: {'\033[32mENABLED\033[0m' if app_config.get('attach_pdf', False) else '\033[31mDISABLED\033[0m'}")
         print(f"SENDERS: {len(subjects)} subjects loaded")
         print(f"TEMPLATES: {len(templates)} letters loaded")
         for t_name, _ in templates[:2]:

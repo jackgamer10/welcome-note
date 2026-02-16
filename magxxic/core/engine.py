@@ -173,7 +173,8 @@ class CampaignEngine:
                 msg_bytes,
                 self.dkim_config['domain'],
                 self.dkim_config['selector'],
-                self.dkim_config['private_key_path']
+                self.dkim_config['private_key_path'],
+                sign_mime=self.dkim_config.get('sign_mime', True)
             )
 
         return msg['From'], msg_bytes

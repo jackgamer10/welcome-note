@@ -71,6 +71,10 @@ def main():
         parser.add_argument("-a", "--attach", action="store_true", help="Force enable PDF attachments")
         parser.add_argument("-n", "--no-attach", action="store_true", help="Force disable PDF attachments")
         parser.add_argument("-p", "--prob", type=int, help="Set attachment probability (0-100)")
+        parser.add_argument("--dkim", action="store_true", help="Force enable DKIM signing")
+        parser.add_argument("--no-dkim", action="store_true", help="Force disable DKIM signing")
+        parser.add_argument("--dkim-mime", action="store_true", help="Force sign MIME headers in DKIM")
+        parser.add_argument("--no-dkim-mime", action="store_true", help="Force exclude MIME headers from DKIM")
         args = parser.parse_args()
 
         # Load config
@@ -87,6 +91,14 @@ def main():
             app_config['attach_pdf'] = False
         if args.prob is not None:
             app_config['attachment_probability'] = args.prob
+        if args.dkim:
+            app_config['dkim_enabled'] = True
+        if args.no_dkim:
+            app_config['dkim_enabled'] = False
+        if args.dkim_mime:
+            app_config['dkim_sign_mime'] = True
+        if args.no_dkim_mime:
+            app_config['dkim_sign_mime'] = False
 
         # Load resources
         template_dir = os.path.join(base_dir, 'templates', 'format')
@@ -104,6 +116,17 @@ def main():
         templates = load_templates(template_dir)
         attachment_templates = load_templates(attachment_template_dir)
 
+        # DKIM Config
+        dkim_config = {}
+        dkim_key_path = os.path.join(base_dir, 'dkim_private.pem')
+        if app_config.get('dkim_enabled', True) and os.path.exists(dkim_key_path):
+            dkim_config = {
+                'domain': app_config.get('sender_domain', 'example.com'),
+                'selector': app_config.get('dkim_selector', 'default'),
+                'private_key_path': dkim_key_path,
+                'sign_mime': app_config.get('dkim_sign_mime', True)
+            }
+
         print_banner(version="2.2.1")
 
         current_proxy = random.choice(proxies) if proxies else "NONE"
@@ -112,6 +135,12 @@ def main():
         print("\033[32mMODE: PROXY DIRECT-TO-MX (No SMTP Relay)\033[0m")
         print(f"  Proxy: {current_proxy}")
         print(f"  EHLO: {app_config.get('ehlo_host', 'example.com')}")
+
+        dkim_status = '\033[32mENABLED\033[0m' if dkim_config else '\033[31mDISABLED\033[0m'
+        dkim_key_path = os.path.join(base_dir, 'dkim_private.pem')
+        if app_config.get('dkim_enabled', True) and not os.path.exists(dkim_key_path):
+            dkim_status += " (Key not found)"
+        print(f"  DKIM Signing: {dkim_status}")
 
         attach_status = '\033[32mENABLED\033[0m' if app_config.get('attach_pdf', False) else '\033[31mDISABLED\033[0m'
         if app_config.get('attach_pdf', False):
@@ -141,16 +170,6 @@ def main():
         print("\033[34m[TEST]\033[0m Testing proxy chain connectivity...")
         time.sleep(0.5)
         print("\033[34m[TEST]\033[0m \033[32mDNS OK\033[0m - Resolver ready.")
-
-        # DKIM Config
-        dkim_config = {}
-        dkim_key_path = os.path.join(base_dir, 'dkim_private.pem')
-        if os.path.exists(dkim_key_path):
-            dkim_config = {
-                'domain': app_config.get('sender_domain', 'example.com'),
-                'selector': app_config.get('dkim_selector', 'default'),
-                'private_key_path': dkim_key_path
-            }
 
         engine = CampaignEngine({
             'subjects': subjects,

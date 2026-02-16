@@ -1,6 +1,8 @@
 {
     "sender_domain": "example.com",
     "dkim_selector": "default",
+    "dkim_enabled": true,
+    "dkim_sign_mime": true,
     "threads": 5,
     "batch_size": 10,
     "ehlo_host": "example.com",

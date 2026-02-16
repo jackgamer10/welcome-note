@@ -40,7 +40,7 @@ setup.bat
 
 The tool's resources are located in the `magxxic/` directory:
 
-- **`config.json`**: Main configuration for sender domain, DKIM selector, thread count, EHLO host, and flow control (delay/pause).
+- **`config.json`**: Main configuration for sender domain, DKIM selector, DKIM enable/disable, thread count, EHLO host, and flow control (delay/pause).
 - **`subjects.txt`**: List of subject lines (one per line) to rotate.
 - **`recipients.txt`**: List of recipient email addresses (one per line).
 - **`proxies.txt`**: List of SOCKS5 proxies (e.g., `socks5://user:pass@host:port` or `host:port`).
@@ -64,6 +64,8 @@ Make sure the `sender_domain` and `dkim_selector` in `config.json` match the DKI
 ### Delay and Pause
 In `config.json`, you can configure the following flow control settings:
 - `delay_min` and `delay_max`: Set a random delay (in seconds) between each email delivery.
+- `dkim_enabled`: Boolean to enable or disable DKIM signing.
+- `dkim_sign_mime`: Boolean to enable/disable signing of MIME headers (`MIME-Version`, `Content-Type`).
 - `batch_size`: Number of emails to send before a mandatory pause.
 - `batch_pause_seconds`: Length of the pause (in seconds) after each batch.
 - `attach_pdf`: Boolean to enable/disable HTML to PDF attachment conversion.
@@ -124,6 +126,10 @@ You can override configuration settings directly from the command line:
 - `-a`, `--attach`: Force enable PDF attachments for this run.
 - `-n`, `--no-attach`: Force disable PDF attachments for this run.
 - `-p PROB`, `--prob PROB`: Set the attachment probability (0-100).
+- `--dkim`: Force enable DKIM signing.
+- `--no-dkim`: Force disable DKIM signing.
+- `--dkim-mime`: Force enable signing of MIME headers.
+- `--no-dkim-mime`: Force disable signing of MIME headers.
 
 Example:
 ```bash

@@ -8,6 +8,7 @@
     "delay_max": 5,
     "batch_pause_seconds": 30,
     "attach_pdf": false,
+    "attachment_probability": 100,
     "pdf_filename_format": "Document_[[RANDOM_STR:6]].pdf",
     "senders": [
         "info@example.com",

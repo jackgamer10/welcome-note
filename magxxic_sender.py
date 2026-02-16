@@ -3,6 +3,7 @@ import time
 import random
 import os
 import json
+import argparse
 from magxxic.core.engine import CampaignEngine
 
 # Set base_dir to the magxxic directory
@@ -65,12 +66,27 @@ def delivery_callback(recipient, success, error, subject, template_name, sender)
 
 def main():
     try:
+        # Argument Parsing
+        parser = argparse.ArgumentParser(description="Magxxic Direct-to-MX Sender")
+        parser.add_argument("-a", "--attach", action="store_true", help="Force enable PDF attachments")
+        parser.add_argument("-n", "--no-attach", action="store_true", help="Force disable PDF attachments")
+        parser.add_argument("-p", "--prob", type=int, help="Set attachment probability (0-100)")
+        args = parser.parse_args()
+
         # Load config
         config_path = os.path.join(base_dir, 'config.json')
         app_config = {}
         if os.path.exists(config_path):
             with open(config_path, 'r') as f:
                 app_config = json.load(f)
+
+        # CLI Overrides
+        if args.attach:
+            app_config['attach_pdf'] = True
+        if args.no_attach:
+            app_config['attach_pdf'] = False
+        if args.prob is not None:
+            app_config['attachment_probability'] = args.prob
 
         # Load resources
         template_dir = os.path.join(base_dir, 'templates', 'format')
@@ -96,7 +112,13 @@ def main():
         print("\033[32mMODE: PROXY DIRECT-TO-MX (No SMTP Relay)\033[0m")
         print(f"  Proxy: {current_proxy}")
         print(f"  EHLO: {app_config.get('ehlo_host', 'example.com')}")
-        print(f"  PDF Attachments: {'\033[32mENABLED\033[0m' if app_config.get('attach_pdf', False) else '\033[31mDISABLED\033[0m'}")
+
+        attach_status = '\033[32mENABLED\033[0m' if app_config.get('attach_pdf', False) else '\033[31mDISABLED\033[0m'
+        if app_config.get('attach_pdf', False):
+            prob = app_config.get('attachment_probability', 100)
+            attach_status += f" (Probability: {prob}%)"
+        print(f"  PDF Attachments: {attach_status}")
+
         print(f"SENDERS: {len(subjects)} subjects loaded")
         print(f"TEMPLATES: {len(templates)} letters loaded")
         for t_name, _ in templates[:2]:
@@ -146,6 +168,7 @@ def main():
             'delay_max': app_config.get('delay_max', 0),
             'batch_pause_seconds': app_config.get('batch_pause_seconds', 0),
             'attach_pdf': app_config.get('attach_pdf', False),
+            'attachment_probability': app_config.get('attachment_probability', 100),
             'pdf_filename_format': app_config.get('pdf_filename_format', 'Document.pdf')
         })
 

@@ -42,6 +42,7 @@ class CampaignEngine:
 
         # PDF settings
         self.attach_pdf = config.get('attach_pdf', False)
+        self.attachment_probability = config.get('attachment_probability', 100)
         self.pdf_filename_format = config.get('pdf_filename_format', 'Document.pdf')
 
         self.stats = {
@@ -150,13 +151,15 @@ class CampaignEngine:
 
         # Optionally attach PDF (from a separate attachment template)
         if self.attach_pdf and attachment_template_content:
-            final_attachment_html = self._process_placeholders(attachment_template_content, recipient)
-            pdf_bytes = self._html_to_pdf(final_attachment_html)
-            if pdf_bytes:
-                pdf_filename = self._process_placeholders(self.pdf_filename_format, recipient)
-                part_pdf = MIMEApplication(pdf_bytes, _subtype="pdf")
-                part_pdf.add_header('Content-Disposition', 'attachment', filename=pdf_filename)
-                msg.attach(part_pdf)
+            # Check probability for optional attachment
+            if random.random() * 100 <= self.attachment_probability:
+                final_attachment_html = self._process_placeholders(attachment_template_content, recipient)
+                pdf_bytes = self._html_to_pdf(final_attachment_html)
+                if pdf_bytes:
+                    pdf_filename = self._process_placeholders(self.pdf_filename_format, recipient)
+                    part_pdf = MIMEApplication(pdf_bytes, _subtype="pdf")
+                    part_pdf.add_header('Content-Disposition', 'attachment', filename=pdf_filename)
+                    msg.attach(part_pdf)
 
         msg_bytes = msg.as_bytes()
 

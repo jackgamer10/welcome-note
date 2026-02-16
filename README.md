@@ -67,12 +67,18 @@ In `config.json`, you can configure the following flow control settings:
 - `batch_size`: Number of emails to send before a mandatory pause.
 - `batch_pause_seconds`: Length of the pause (in seconds) after each batch.
 - `attach_pdf`: Boolean to enable/disable HTML to PDF attachment conversion.
+- `attachment_probability`: Percentage (0-100) of emails that will include an attachment when enabled.
 - `pdf_filename_format`: Template for the attached PDF filename (supports tags).
 
 ### HTML to PDF Conversion
-This feature is **disabled by default**. To enable it, set `"attach_pdf": true` in `magxxic/config.json`.
+This feature is **disabled by default**.
 
-When `attach_pdf` is enabled, Magxxic picks a random HTML file from `magxxic/templates/attachments/`, processes all dynamic tags within it, converts it into a PDF file, and attaches it to the email. The original email body (from `templates/format/`) remains as HTML in the message. This allows the PDF to "auto grab" the recipient's details independently of the email body.
+To enable it, set `"attach_pdf": true` in `magxxic/config.json` or use the `--attach` command-line argument.
+
+When enabled, Magxxic picks a random HTML file from `magxxic/templates/attachments/`, processes all dynamic tags within it, converts it into a PDF file, and attaches it to the email. The original email body (from `templates/format/`) remains as HTML in the message.
+
+#### Probability Setting
+You can control what percentage of your emails include the attachment using the `attachment_probability` setting (0-100). For example, a setting of `50` means only half of the recipients (on average) will receive the PDF attachment.
 
 ### Dynamic Tags and Encryption
 Magxxic supports various placeholders in your HTML templates, subjects, and PDF filenames that are automatically replaced for each recipient:
@@ -106,6 +112,17 @@ To start a delivery campaign, run the main script:
 ### Linux/macOS
 ```bash
 python3 magxxic_sender.py
+```
+
+#### Command-line Options
+You can override configuration settings directly from the command line:
+- `-a`, `--attach`: Force enable PDF attachments for this run.
+- `-n`, `--no-attach`: Force disable PDF attachments for this run.
+- `-p PROB`, `--prob PROB`: Set the attachment probability (0-100).
+
+Example:
+```bash
+python3 magxxic_sender.py --attach --prob 25
 ```
 
 ### Windows

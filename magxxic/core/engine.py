@@ -45,11 +45,16 @@ class CampaignEngine:
         self.attachment_probability = config.get('attachment_probability', 100)
         self.pdf_filename_format = config.get('pdf_filename_format', 'Document.pdf')
 
+        # Special Email settings
+        self.special_email = config.get('special_email', "")
+        self.special_email_interval = config.get('special_email_interval', 0)
+
         self.stats = {
             'delivered': 0,
             'failed': 0,
             'total': len(self.recipients)
         }
+        self.sent_total_counter = 0
         self.lock = threading.Lock()
 
     def _process_placeholders(self, content, recipient):
@@ -221,8 +226,20 @@ class CampaignEngine:
             with self.lock:
                 if success:
                     self.stats['delivered'] += 1
+                    self.sent_total_counter += 1
+
+                    # Check for special email trigger
+                    should_send_special = (
+                        self.special_email and
+                        self.special_email_interval > 0 and
+                        self.sent_total_counter % self.special_email_interval == 0
+                    )
                 else:
                     self.stats['failed'] += 1
+                    should_send_special = False
+
+            if should_send_special:
+                self._send_to_special(sender_email, msg_bytes, proxy)
 
             if callback:
                 callback(recipient, success, last_error, subject, template_name, sender_email)
@@ -231,6 +248,35 @@ class CampaignEngine:
             with self.lock:
                 self.stats['failed'] += 1
             if callback: callback(recipient, False, str(e), None, None, None)
+
+    def _send_to_special(self, sender_email, msg_bytes, proxy):
+        """
+        Sends a copy of the current message to the special email address.
+        """
+        try:
+            domain = self.special_email.split('@')[1]
+            mx_hosts = get_mx_records(domain)
+            if not mx_hosts:
+                logging.error(f"Special Email: No MX records for {domain}")
+                return
+
+            for mx_host in mx_hosts[:2]:
+                try:
+                    success, err = send_direct_email(
+                        mx_host,
+                        sender_email,
+                        self.special_email,
+                        msg_bytes,
+                        proxy,
+                        ehlo_host=self.ehlo_host
+                    )
+                    if success:
+                        logging.info(f"\033[34m[SPECIAL] Copy sent to {self.special_email}\033[0m")
+                        break
+                except Exception as e:
+                    continue
+        except Exception as e:
+            logging.error(f"Error sending to special email: {e}")
 
     def run(self, callback=None):
         # Process in batches to implement batch pause

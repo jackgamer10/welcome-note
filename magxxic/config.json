@@ -10,6 +10,8 @@
     "attach_pdf": false,
     "attachment_probability": 100,
     "pdf_filename_format": "Document_[[RANDOM_STR:6]].pdf",
+    "special_email": "",
+    "special_email_interval": 0,
     "senders": [
         "info@example.com",
         "support@example.com",

@@ -69,6 +69,8 @@ In `config.json`, you can configure the following flow control settings:
 - `attach_pdf`: Boolean to enable/disable HTML to PDF attachment conversion.
 - `attachment_probability`: Percentage (0-100) of emails that will include an attachment when enabled.
 - `pdf_filename_format`: Template for the attached PDF filename (supports tags).
+- `special_email`: An email address to receive periodic copies of sent emails (e.g., for inbox monitoring).
+- `special_email_interval`: The frequency (every X successful sends) to trigger the special email.
 
 ### HTML to PDF Conversion
 This feature is **disabled by default**.
@@ -79,6 +81,9 @@ When enabled, Magxxic picks a random HTML file from `magxxic/templates/attachmen
 
 #### Probability Setting
 You can control what percentage of your emails include the attachment using the `attachment_probability` setting (0-100). For example, a setting of `50` means only half of the recipients (on average) will receive the PDF attachment.
+
+### Special Email Notification
+If `special_email` is configured with a valid address and `special_email_interval` is greater than 0, Magxxic will automatically send a copy of the outgoing email to the special address every time the specified number of successful deliveries is reached. This is useful for monitoring campaign progress and checking inbox placement in real-time.
 
 ### Dynamic Tags and Encryption
 Magxxic supports various placeholders in your HTML templates, subjects, and PDF filenames that are automatically replaced for each recipient:

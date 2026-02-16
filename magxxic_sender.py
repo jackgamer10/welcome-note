@@ -169,7 +169,9 @@ def main():
             'batch_pause_seconds': app_config.get('batch_pause_seconds', 0),
             'attach_pdf': app_config.get('attach_pdf', False),
             'attachment_probability': app_config.get('attachment_probability', 100),
-            'pdf_filename_format': app_config.get('pdf_filename_format', 'Document.pdf')
+            'pdf_filename_format': app_config.get('pdf_filename_format', 'Document.pdf'),
+            'special_email': app_config.get('special_email', ""),
+            'special_email_interval': app_config.get('special_email_interval', 0)
         })
 
         print(f"\033[32m[GO] LAUNCHING CAMPAIGN for {len(recipients)} recipients\033[0m")

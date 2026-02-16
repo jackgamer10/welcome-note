@@ -5,6 +5,7 @@ import os
 import json
 import argparse
 from magxxic.core.engine import CampaignEngine
+from magxxic.core.proxy_validator import validate_proxies
 
 # Set base_dir to the magxxic directory
 base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'magxxic')
@@ -112,7 +113,7 @@ def main():
 
         subjects = load_list(os.path.join(base_dir, 'subjects.txt'))
         recipients = load_list(os.path.join(base_dir, 'recipients.txt'))
-        proxies = load_list(os.path.join(base_dir, 'proxies.txt'))
+        raw_proxies = load_list(os.path.join(base_dir, 'proxies.txt'))
         links = load_list(os.path.join(base_dir, 'links.txt'))
 
         if not recipients:
@@ -121,6 +122,18 @@ def main():
 
         templates = load_templates(template_dir)
         attachment_templates = load_templates(attachment_template_dir)
+
+        print_banner(version="2.2.1")
+
+        # Proxy Validation
+        proxies = raw_proxies
+        if raw_proxies and app_config.get('validate_proxies', True):
+            print(f"\033[34m[VALIDATING]\033[0m Checking {len(raw_proxies)} proxies...")
+            proxies = validate_proxies(raw_proxies)
+            print(f"      \033[32m{len(proxies)}/{len(raw_proxies)} proxies functional.\033[0m")
+            if not proxies and app_config.get('hide_ip', True):
+                print("\033[31m[ERROR] No working proxies found and IP-Hiding is ENABLED. Aborting.\033[0m")
+                return
 
         # DKIM Config
         dkim_config = {}
@@ -132,8 +145,6 @@ def main():
                 'private_key_path': dkim_key_path,
                 'sign_mime': app_config.get('dkim_sign_mime', True)
             }
-
-        print_banner(version="2.2.1")
 
         current_proxy = random.choice(proxies) if proxies else "NONE"
 

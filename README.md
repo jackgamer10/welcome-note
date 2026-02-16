@@ -5,7 +5,8 @@ Magxxic is a high-performance, direct-to-MX email delivery tool designed for res
 ## Features
 
 - **Direct-to-MX Delivery**: Resolves MX records and connects directly to destination servers.
-- **SOCKS5 Proxy Support**: Routes all traffic through a SOCKS5 chain.
+- **SOCKS5 Proxy Support**: Routes all traffic through a SOCKS5 chain using the `socks` library for full IP hiding.
+- **Proxy Validation**: Automatically validates your SOCKS5 proxies at startup to ensure maximum delivery rates.
 - **DKIM Signing**: Automatically signs outgoing messages for trust verification.
 - **Multi-threaded Engine**: Fast concurrent delivery using a thread pool.
 - **Rotation Logic**: Rotates subjects, HTML templates, and sender addresses for every recipient.
@@ -74,6 +75,10 @@ In `config.json`, you can configure the following flow control settings:
 - `pdf_filename_format`: Template for the attached PDF filename (supports tags).
 - `special_email`: An email address to receive periodic copies of sent emails (e.g., for inbox monitoring).
 - `special_email_interval`: The frequency (every X successful sends) to trigger the special email.
+- `validate_proxies`: Boolean to enable/disable automated proxy validation at startup.
+
+### Proxy Validation
+At startup, Magxxic can automatically test each SOCKS5 proxy in your `proxies.txt` to ensure it is functional and capable of reaching the internet. Functional proxies are kept in the pool, while broken ones are discarded for the current run. This ensures that your delivery campaign isn't stalled by dead proxies.
 
 ### HTML to PDF Conversion
 This feature is **disabled by default**.

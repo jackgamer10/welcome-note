@@ -7,6 +7,7 @@
     "threads": 5,
     "batch_size": 10,
     "ehlo_host": "example.com",
+    "validate_proxies": true,
     "delay_min": 1,
     "delay_max": 5,
     "batch_pause_seconds": 30,

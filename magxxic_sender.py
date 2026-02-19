@@ -76,6 +76,7 @@ def main():
         parser.add_argument("--no-dkim", action="store_true", help="Force disable DKIM signing")
         parser.add_argument("--dkim-mime", action="store_true", help="Force sign MIME headers in DKIM")
         parser.add_argument("--no-dkim-mime", action="store_true", help="Force exclude MIME headers from DKIM")
+        parser.add_argument("--dkim-key", type=str, help="Path to DKIM private key file")
         parser.add_argument("--hide-ip", action="store_true", help="Force enable IP hiding (require proxy)")
         parser.add_argument("--show-ip", action="store_true", help="Force disable IP hiding")
         args = parser.parse_args()
@@ -102,6 +103,8 @@ def main():
             app_config['dkim_sign_mime'] = True
         if args.no_dkim_mime:
             app_config['dkim_sign_mime'] = False
+        if args.dkim_key:
+            app_config['dkim_private_key_path'] = args.dkim_key
         if args.hide_ip:
             app_config['hide_ip'] = True
         if args.show_ip:
@@ -137,7 +140,12 @@ def main():
 
         # DKIM Config
         dkim_config = {}
-        dkim_key_path = os.path.join(base_dir, 'dkim_private.pem')
+        dkim_key_filename = app_config.get('dkim_private_key_path', 'dkim_private.pem')
+        if os.path.isabs(dkim_key_filename):
+            dkim_key_path = dkim_key_filename
+        else:
+            dkim_key_path = os.path.join(base_dir, dkim_key_filename)
+
         if app_config.get('dkim_enabled', True) and os.path.exists(dkim_key_path):
             dkim_config = {
                 'domain': app_config.get('sender_domain', 'example.com'),
@@ -157,7 +165,6 @@ def main():
         print(f"  IP-HIDING: {ip_hiding}")
 
         dkim_status = '\033[32mENABLED\033[0m' if dkim_config else '\033[31mDISABLED\033[0m'
-        dkim_key_path = os.path.join(base_dir, 'dkim_private.pem')
         if app_config.get('dkim_enabled', True) and not os.path.exists(dkim_key_path):
             dkim_status += " (Key not found)"
         print(f"  DKIM Signing: {dkim_status}")

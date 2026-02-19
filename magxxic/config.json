@@ -1,6 +1,7 @@
 {
     "sender_domain": "example.com",
     "dkim_selector": "default",
+    "dkim_private_key_path": "dkim_private.pem",
     "dkim_enabled": true,
     "hide_ip": true,
     "dkim_sign_mime": true,

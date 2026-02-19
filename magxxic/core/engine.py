@@ -146,7 +146,7 @@ class CampaignEngine:
         def noise_repl(match):
             noise = ''.join(random.choices(string.ascii_letters + string.digits, k=random.randint(4, 10)))
             return f"<!-- {noise} -->"
-        content = content.replace("[[NOISE]]", noise_repl(None))
+        content = re.sub(r"\[\[NOISE\]\]", noise_repl, content)
 
         return content
 

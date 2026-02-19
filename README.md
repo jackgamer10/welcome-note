@@ -51,7 +51,13 @@ The tool's resources are located in the `magxxic/` directory:
 
 ### DKIM Setup
 
-To use DKIM signing, you must provide your own RSA private key in `magxxic/dkim_private.pem`.
+To use DKIM signing, you need to configure three main settings in `magxxic/config.json`:
+
+1.  **`sender_domain`**: The domain you are sending from (e.g., `example.com`).
+2.  **`dkim_selector`**: The selector used in your DKIM DNS record (default is `default`).
+3.  **`dkim_private_key_path`**: The filename or full path to your RSA private key (default is `dkim_private.pem`).
+
+Place your private key file in the `magxxic/` directory.
 
 **Generating a DKIM Key:**
 If you have OpenSSL installed, you can generate a 1024-bit RSA private key with the following command:
@@ -148,6 +154,7 @@ You can override configuration settings directly from the command line:
 - `-p PROB`, `--prob PROB`: Set the attachment probability (0-100).
 - `--dkim`: Force enable DKIM signing.
 - `--no-dkim`: Force disable DKIM signing.
+- `--dkim-key PATH`: Specify a custom path to your DKIM private key file.
 - `--hide-ip`: Force enable IP hiding (requires at least one proxy in `proxies.txt`).
 - `--show-ip`: Force disable IP hiding (allows direct connection from your IP if no proxy is available).
 - `--dkim-mime`: Force enable signing of MIME headers.

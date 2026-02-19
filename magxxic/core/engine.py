@@ -52,6 +52,11 @@ class CampaignEngine:
         # IP hiding
         self.hide_ip = config.get('hide_ip', True)
 
+        # New Spam Filter & Tracking settings
+        self.tracking_url = config.get('tracking_url', "")
+        self.custom_headers = config.get('custom_headers', {})
+        self.x_mailer = config.get('x_mailer', "Magxxic-V2")
+
         self.stats = {
             'delivered': 0,
             'failed': 0,
@@ -126,6 +131,23 @@ class CampaignEngine:
             return binascii.hexlify(match.group(1).encode()).decode()
         content = re.sub(r"\[\[HEX:(.*?)\]\]", hex_repl, content)
 
+        # --- Link Tracking ---
+        def track_repl(match):
+            url = match.group(1)
+            if self.tracking_url:
+                encoded_url = base64.urlsafe_b64encode(url.encode()).decode().strip('=')
+                recipient_b64 = base64.urlsafe_b64encode(recipient.encode()).decode().strip('=')
+                separator = "&" if "?" in self.tracking_url else "?"
+                return f"{self.tracking_url}{separator}u={encoded_url}&r={recipient_b64}"
+            return url
+        content = re.sub(r"\[\[TRACK:(.*?)\]\]", track_repl, content)
+
+        # --- Spam Filter Evasion (Noise) ---
+        def noise_repl(match):
+            noise = ''.join(random.choices(string.ascii_letters + string.digits, k=random.randint(4, 10)))
+            return f"<!-- {noise} -->"
+        content = content.replace("[[NOISE]]", noise_repl(None))
+
         return content
 
     def _html_to_pdf(self, html_content):
@@ -150,8 +172,19 @@ class CampaignEngine:
 
         msg = MIMEMultipart()
         msg['Subject'] = final_subject
-        msg['From'] = random.choice(self.senders)
+        sender = random.choice(self.senders)
+        msg['From'] = sender
         msg['To'] = recipient
+
+        # Standard Anti-Spam Headers
+        msg['Message-ID'] = f"<{datetime.now().strftime('%Y%m%d%H%M%S')}.{random.randint(1000,9999)}@{sender.split('@')[-1]}>"
+        msg['X-Mailer'] = self.x_mailer
+        msg['Date'] = datetime.now().strftime("%a, %d %b %Y %H:%M:%S +0000")
+
+        # Custom Headers
+        for key, value in self.custom_headers.items():
+            if key not in msg: # Don't overwrite standard ones if already set
+                msg[key] = value
 
         # Attach HTML body
         part_html = MIMEText(final_template, 'html')

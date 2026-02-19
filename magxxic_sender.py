@@ -211,7 +211,10 @@ def main():
             'pdf_filename_format': app_config.get('pdf_filename_format', 'Document.pdf'),
             'special_email': app_config.get('special_email', ""),
             'special_email_interval': app_config.get('special_email_interval', 0),
-            'hide_ip': app_config.get('hide_ip', True)
+            'hide_ip': app_config.get('hide_ip', True),
+            'tracking_url': app_config.get('tracking_url', ""),
+            'x_mailer': app_config.get('x_mailer', "Magxxic-V2"),
+            'custom_headers': app_config.get('custom_headers', {})
         })
 
         print(f"\033[32m[GO] LAUNCHING CAMPAIGN for {len(recipients)} recipients\033[0m")

@@ -16,6 +16,12 @@
     "pdf_filename_format": "Document_[[RANDOM_STR:6]].pdf",
     "special_email": "",
     "special_email_interval": 0,
+    "tracking_url": "",
+    "x_mailer": "Magxxic-V2",
+    "custom_headers": {
+        "X-Priority": "3",
+        "List-Unsubscribe": "<mailto:unsubscribe@example.com>"
+    },
     "senders": [
         "info@example.com",
         "support@example.com",

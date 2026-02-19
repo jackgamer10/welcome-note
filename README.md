@@ -76,6 +76,9 @@ In `config.json`, you can configure the following flow control settings:
 - `special_email`: An email address to receive periodic copies of sent emails (e.g., for inbox monitoring).
 - `special_email_interval`: The frequency (every X successful sends) to trigger the special email.
 - `validate_proxies`: Boolean to enable/disable automated proxy validation at startup.
+- `tracking_url`: URL of your tracking service.
+- `x_mailer`: Custom `X-Mailer` header value.
+- `custom_headers`: Dictionary of extra MIME headers to include.
 
 ### Proxy Validation
 At startup, Magxxic can automatically test each SOCKS5 proxy in your `proxies.txt` to ensure it is functional and capable of reaching the internet. Functional proxies are kept in the pool, while broken ones are discarded for the current run. This ensures that your delivery campaign isn't stalled by dead proxies.
@@ -92,6 +95,17 @@ You can control what percentage of your emails include the attachment using the 
 
 ### Special Email Notification
 If `special_email` is configured with a valid address and `special_email_interval` is greater than 0, Magxxic will automatically send a copy of the outgoing email to the special address every time the specified number of successful deliveries is reached. This is useful for monitoring campaign progress and checking inbox placement in real-time.
+
+### Link Tracking
+If `tracking_url` is set, you can use the `[[TRACK:url]]` tag in your templates. Magxxic will replace it with:
+`{tracking_url}?u={base64_url}&r={recipient_b64}`
+This allows you to track clicks and link them back to specific recipients.
+
+### Spam Filter Evasion
+Magxxic includes several features to help bypass spam filters:
+- **`[[NOISE]]`**: Inserts a random invisible HTML comment (e.g., `<!-- aB12x -->`) into the template to vary the content and confuse Bayesian filters.
+- **Custom Headers**: Add headers like `List-Unsubscribe`, `X-Priority`, or custom headers in `config.json`.
+- **Standard Headers**: Automatically generates `Message-ID` and `Date` headers that follow RFC standards.
 
 ### Dynamic Tags and Encryption
 Magxxic supports various placeholders in your HTML templates, subjects, and PDF filenames that are automatically replaced for each recipient:

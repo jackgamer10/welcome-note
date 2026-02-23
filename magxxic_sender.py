@@ -65,6 +65,13 @@ def delivery_callback(recipient, success, error, subject, template_name, sender)
     else:
         print(f"      \033[90mSubject: {subject} | Template: {template_name}\033[0m")
 
+def format_bar(delivered, total, length=20):
+    if total == 0: return "\033[90m" + "░" * length + "\033[0m"
+    filled = int(delivered / total * length)
+    pct = (delivered / total) * 100
+    color = "\033[32m" if pct > 70 else "\033[33m" if pct > 30 else "\033[31m"
+    return color + "█" * filled + "\033[90m" + "░" * (length - filled) + "\033[0m"
+
 def main():
     try:
         # Argument Parsing
@@ -228,17 +235,61 @@ def main():
 
         stats = engine.run(callback=delivery_callback)
 
-        print("\033[32m" + "="*85 + "\033[0m")
-        print("\033[32mOPERATION COMPLETE - MAGXXIC V2.2.1\033[0m")
-        print("\033[32m" + "="*85 + "\033[0m")
-        print("    [DELIVERY STATISTICS]")
-        print(f"      DELIVERED:    \033[32m{stats['delivered']} emails\033[0m")
-        print(f"      FAILED:       \033[31m{stats['failed']} emails\033[0m")
-        print(f"      TOTAL:        {stats['total']} emails")
+        duration = stats['end_time'] - stats['start_time']
+        throughput = (stats['delivered'] + stats['failed']) / (duration / 60) if duration > 0 else 0
+        success_rate = (stats['delivered'] / stats['total']) * 100 if stats['total'] else 0
 
-        rate = (stats['delivered'] / stats['total']) * 100 if stats['total'] else 0
-        print(f"      SUCCESS RATE: {rate:.1f}%")
+        status_msg = "\033[32mOPERATION COMPLETE\033[0m" if success_rate > 90 else "\033[33mOPERATION COMPLETED WITH ERRORS\033[0m" if success_rate > 0 else "\033[31mOPERATION FAILED\033[0m"
+
+        print("\n\033[32m" + "="*85 + "\033[0m")
+        print(f"{status_msg} - MAGXXIC V2.2.1 (PROXY DIRECT-TO-MX)")
         print("\033[32m" + "="*85 + "\033[0m")
+
+        print("\033[1;37m[DELIVERY STATISTICS]\033[0m")
+        print(f"  DELIVERED:    \033[32m{stats['delivered']} emails\033[0m")
+        print(f"  FAILED:       \033[31m{stats['failed']} emails\033[0m")
+        print(f"  TOTAL:        {stats['total']} emails")
+        rate_color = "\033[32m" if success_rate > 80 else "\033[33m" if success_rate > 20 else "\033[31m"
+        print(f"  SUCCESS RATE: {rate_color}{success_rate:.1f}% ({'HEALTHY' if success_rate > 80 else 'DEGRADED' if success_rate > 20 else 'CRITICAL'})\033[0m")
+
+        print("\n\033[1;37m[PERFORMANCE METRICS]\033[0m")
+        print(f"  DURATION:     \033[36m{duration:.1f}s\033[0m")
+        print(f"  THROUGHPUT:   \033[36m{throughput:.1f} emails/minute\033[0m")
+        print(f"  MODE:         PROXY DIRECT-TO-MX")
+        print(f"  PROXY:        {current_proxy}")
+        ip_hide_status = '\033[32mENABLED\033[0m' if app_config.get('hide_ip', True) else '\033[31mDISABLED\033[0m'
+        print(f"  IP-HIDING:    {ip_hide_status}")
+
+        print("\n\033[34m" + "-"*85 + "\033[0m")
+        print(f"\033[31m[STATUS] {status_msg.replace('\033[32m','').replace('\033[33m','').replace('\033[31m','').replace('[0m','')}\033[0m")
+        print("\033[34m" + "-"*85 + "\033[0m")
+
+        print("\n\033[1;34mBOUNCE ANALYSIS REPORT\033[0m")
+        print("\033[34m" + "-"*85 + "\033[0m")
+        print(f"  Hard Bounces (permanent): \033[31m{stats['bounces']['hard']}\033[0m")
+        print(f"  Soft Bounces (temporary): \033[33m{stats['bounces']['soft']}\033[0m")
+        print(f"  Block Bounces (spam/IP):  \033[31m{stats['bounces']['block']}\033[0m")
+        print(f"  Retried:                  \033[36m{stats['retried']}\033[0m")
+        print(f"  Retry Successes:          \033[32m{stats['retry_successes']}\033[0m")
+        print(f"  Domains Flagged:          \033[31m{stats['domains_flagged']}\033[0m")
+
+        print("\n  \033[33mProblem Domains:\033[0m")
+        problem_domains = {d: v for d, v in stats['domain_engagement'].items() if v['failed'] > 0}
+        for domain, data in sorted(problem_domains.items(), key=lambda x: x[1]['failed'], reverse=True)[:5]:
+            codes = ", ".join(str(c) for c in data['errors'].keys())
+            print(f"    {domain}: {data['failed']} failures, codes: {{{codes}}}")
+
+        print("\n\033[1;34mDOMAIN ENGAGEMENT REPORT\033[0m")
+        print("\033[34m" + "-"*85 + "\033[0m")
+        for domain, data in sorted(stats['domain_engagement'].items(), key=lambda x: x[1]['delivered'] + x[1]['failed'], reverse=True)[:15]:
+            d_total = data['delivered'] + data['failed']
+            d_rate = (data['delivered'] / d_total * 100) if d_total > 0 else 0
+            bar = format_bar(data['delivered'], d_total)
+            print(f"  {domain:<30} {bar} {d_rate:>3.0f}% ({data['delivered']}/{d_total})")
+
+        print("\033[34m" + "="*85 + "\033[0m")
+        print("\033[90mPress ENTER to send again  |  Close window (X) to exit\033[0m")
+        input()
     except KeyboardInterrupt:
         print("\n\033[31m[!] Operation aborted by user.\033[0m")
         sys.exit(0)

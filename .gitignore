@@ -6,3 +6,5 @@ venv/
 ENV/
 env/
 magxxic/dkim_private.pem
+node_modules/
+package-lock.json

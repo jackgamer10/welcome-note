@@ -9,6 +9,8 @@
     "batch_size": 10,
     "ehlo_host": "example.com",
     "validate_proxies": true,
+    "validate_mx_before_send": true,
+    "test_connection_before_send": false,
     "delay_min": 1,
     "delay_max": 5,
     "batch_pause_seconds": 30,

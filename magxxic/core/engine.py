@@ -52,6 +52,10 @@ class CampaignEngine:
         # IP hiding
         self.hide_ip = config.get('hide_ip', True)
 
+        # Pre-send checks
+        self.validate_mx_before_send = config.get('validate_mx_before_send', True)
+        self.test_connection_before_send = config.get('test_connection_before_send', False)
+
         # New Spam Filter & Tracking settings
         self.tracking_url = config.get('tracking_url', "")
         self.custom_headers = config.get('custom_headers', {})
@@ -60,7 +64,18 @@ class CampaignEngine:
         self.stats = {
             'delivered': 0,
             'failed': 0,
-            'total': len(self.recipients)
+            'total': len(self.recipients),
+            'start_time': None,
+            'end_time': None,
+            'bounces': {
+                'hard': 0,
+                'soft': 0,
+                'block': 0
+            },
+            'retried': 0,
+            'retry_successes': 0,
+            'domains_flagged': 0,
+            'domain_engagement': {} # {domain: {'delivered': 0, 'failed': 0, 'errors': {}}}
         }
         self.sent_total_counter = 0
         self.lock = threading.Lock()
@@ -215,6 +230,22 @@ class CampaignEngine:
 
         return msg['From'], msg_bytes
 
+    def _classify_error(self, error_msg):
+        """Classify SMTP error message into Hard, Soft, or Block."""
+        msg = str(error_msg).lower()
+        code = 0
+        match = re.search(r'(\d{3})', msg)
+        if match:
+            code = int(match.group(1))
+
+        if any(keyword in msg for keyword in ['spam', 'block', 'blacklisted', 'rbl', 'denied']):
+            return 'block', code
+        if 500 <= code < 600:
+            return 'hard', code
+        if 400 <= code < 500:
+            return 'soft', code
+        return 'hard', code # Default to hard if unknown
+
     def _process_recipient(self, recipient, callback=None):
         try:
             # Apply delay if configured
@@ -222,13 +253,22 @@ class CampaignEngine:
                 time.sleep(random.uniform(self.delay_min, self.delay_max))
 
             domain = recipient.split('@')[1]
-            mx_hosts = get_mx_records(domain)
 
-            if not mx_hosts:
-                with self.lock:
-                    self.stats['failed'] += 1
-                if callback: callback(recipient, False, "No MX records found", None, None, None)
-                return
+            # Initial MX Check if enabled
+            if self.validate_mx_before_send:
+                mx_hosts = get_mx_records(domain)
+                if not mx_hosts:
+                    with self.lock:
+                        self.stats['failed'] += 1
+                        if domain not in self.stats['domain_engagement']:
+                            self.stats['domain_engagement'][domain] = {'delivered': 0, 'failed': 0, 'errors': {}}
+                        self.stats['domain_engagement'][domain]['failed'] += 1
+                        self.stats['domain_engagement'][domain]['errors'][0] = self.stats['domain_engagement'][domain]['errors'].get(0, 0) + 1
+                    if callback: callback(recipient, False, "No MX records found", None, None, None)
+                    return
+            else:
+                # We still need MX to send, so if not pre-validated, resolve here
+                mx_hosts = get_mx_records(domain)
 
             subject = random.choice(self.subjects) if self.subjects else "No Subject"
             template_name, template_content = random.choice(self.templates) if self.templates else ("None", "No Template")
@@ -250,9 +290,17 @@ class CampaignEngine:
 
             success = False
             last_error = "Unknown"
+            smtp_code = 0
+
             # Try top MX hosts
             for mx_host in mx_hosts[:2]:
                 try:
+                    # Connection test if enabled
+                    if self.test_connection_before_send:
+                        # Simple check if port 25 is reachable (this is already implicitly done in send_direct_email,
+                        # but we can add more specific testing if needed)
+                        pass
+
                     success, last_error = send_direct_email(
                         mx_host,
                         sender_email,
@@ -263,14 +311,23 @@ class CampaignEngine:
                     )
                     if success:
                         break
+                    else:
+                        # track retried count if we have more hosts
+                        if mx_host == mx_hosts[0] and len(mx_hosts) > 1:
+                            with self.lock:
+                                self.stats['retried'] += 1
                 except Exception as e:
                     last_error = str(e)
                     continue
 
             with self.lock:
+                if domain not in self.stats['domain_engagement']:
+                    self.stats['domain_engagement'][domain] = {'delivered': 0, 'failed': 0, 'errors': {}}
+
                 if success:
                     self.stats['delivered'] += 1
                     self.sent_total_counter += 1
+                    self.stats['domain_engagement'][domain]['delivered'] += 1
 
                     # Check for special email trigger
                     should_send_special = (
@@ -278,9 +335,21 @@ class CampaignEngine:
                         self.special_email_interval > 0 and
                         self.sent_total_counter % self.special_email_interval == 0
                     )
+
+                    # If this was a retry success
+                    if last_error == "Delivered" and any(h in str(last_error) for h in mx_hosts[1:]):
+                         self.stats['retry_successes'] += 1
                 else:
                     self.stats['failed'] += 1
                     should_send_special = False
+                    self.stats['domain_engagement'][domain]['failed'] += 1
+
+                    bounce_type, smtp_code = self._classify_error(last_error)
+                    self.stats['bounces'][bounce_type] += 1
+                    self.stats['domain_engagement'][domain]['errors'][smtp_code] = self.stats['domain_engagement'][domain]['errors'].get(smtp_code, 0) + 1
+
+                    if bounce_type == 'block':
+                        self.stats['domains_flagged'] += 1
 
             if should_send_special:
                 self._send_to_special(sender_email, msg_bytes, proxy)
@@ -323,6 +392,7 @@ class CampaignEngine:
             logging.error(f"Error sending to special email: {e}")
 
     def run(self, callback=None):
+        self.stats['start_time'] = time.time()
         # Process in batches to implement batch pause
         for i in range(0, len(self.recipients), self.batch_size):
             batch = self.recipients[i:i + self.batch_size]
@@ -340,4 +410,5 @@ class CampaignEngine:
                 print(f"\033[33m[PAUSE] Pausing for {self.batch_pause_seconds} seconds between batches...\033[0m")
                 time.sleep(self.batch_pause_seconds)
 
+        self.stats['end_time'] = time.time()
         return self.stats

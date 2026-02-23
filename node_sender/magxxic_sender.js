@@ -1,8 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
-const { CampaignEngine } = require('./magxxic/core_js/engine');
-const { validateProxies } = require('./magxxic/core_js/proxy_validator');
+const { CampaignEngine } = require('./magxxic/core/engine');
+const { validateProxies } = require('./magxxic/core/proxy_validator');
 
 const baseDir = path.join(__dirname, 'magxxic');
 
@@ -15,16 +15,14 @@ function printBanner(version = "2.2.1") {
                 @@@@@@@@@@@@@@@@@@@@@@
                 @@@@@@@@@@@@@@@@@@@@@@`);
 
-    const banner = chalk.green(`
-  __  __                             _
- |  \\/  |                           (_)
- | \\  / |  __ _   __ _ __  __ __  __ _   ___
- | |\\/| | / _` | / _` |\\ \\/ / \\ \\/ /| | / __|
- | |  | || (_| || (_| | >  <   >  < | || (__
- |_|  |_| \\__,_| \\__, |/_/\\_\\ /_/\\_\\|_| \\___|
-                  __/ |
-                 |___/
-`);
+    const banner = chalk.green("  __  __                             _        \n" +
+" |  \\/  |                           (_)       \n" +
+" | \\  / |  __ _   __ _ __  __ __  __ _   ___  \n" +
+" | |\\/| | / _` | / _` |\\ \\/ / \\ \\/ /| | / __| \n" +
+" | |  | || (_| || (_| | >  <   >  < | || (__  \n" +
+" |_|  |_| \\__,_| \\__, |/_/\\_\\ /_/\\_\\|_| \\___| \n" +
+"                  __/ |                       \n" +
+"                 |___/                        \n");
     console.log(brain);
     console.log(banner);
     console.log(chalk.green("      >>> PROXY-ONLY DIRECT-TO-MX DELIVERY SYSTEM (NODE.JS) - STATUS: ARMED <<<"));

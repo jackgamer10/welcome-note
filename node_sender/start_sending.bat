@@ -1,7 +1,7 @@
 @echo off
-echo Starting Magxxic Email Sender...
+echo Starting Magxxic Email Sender (Node.js)...
 set FORCE_COLOR=1
-python magxxic_sender.py
+node magxxic_sender.js
 if %errorlevel% neq 0 (
     echo.
     echo An error occurred while running the script.

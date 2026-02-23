@@ -13,4 +13,4 @@ function getDkimOptions(domain, selector, privateKeyPath) {
     }
 }
 
-module.exports = { signMessage };
+module.exports = { getDkimOptions };

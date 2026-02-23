@@ -1,4 +1,5 @@
 @echo off
+set FORCE_COLOR=1
 echo Setting up Magxxic Email Sender...
 pip install -r requirements.txt
 if %errorlevel% neq 0 (

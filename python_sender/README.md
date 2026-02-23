@@ -176,6 +176,8 @@ start_sending.bat
 
 The tool will display a progress log in the terminal, showing the status of each delivery along with the selected subject and template.
 
+> **Note for Windows/RDP Users:** If colors are not displaying correctly, ensure you are using the provided `start_sending.bat` script, which enables ANSI color support.
+
 ## Statistics
 
 Upon completion, Magxxic provides a summary of:

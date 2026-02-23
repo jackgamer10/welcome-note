@@ -9,28 +9,23 @@ async function checkProxy(proxyStr, testHost = "8.8.8.8", testPort = 53, timeout
         proxyUrl = `socks5://${proxyStr}`;
     }
 
-    const agent = new SocksProxyAgent(proxyUrl);
-
-    return new Promise((resolve) => {
-        const socket = agent.callback(
-            { host: testHost, port: testPort },
-            { timeout }
-        );
-
-        socket.on('connect', () => {
-            socket.destroy();
-            resolve(true);
+    try {
+        const agent = new SocksProxyAgent(proxyUrl);
+        return new Promise((resolve) => {
+            agent.callback({ host: testHost, port: testPort }, {}, (err, socket) => {
+                if (err) {
+                    resolve(false);
+                } else {
+                    socket.destroy();
+                    resolve(true);
+                }
+            });
+            // Also need a timeout for the callback itself
+            setTimeout(() => resolve(false), timeout);
         });
-
-        socket.on('error', () => {
-            resolve(false);
-        });
-
-        setTimeout(() => {
-            socket.destroy();
-            resolve(false);
-        }, timeout);
-    });
+    } catch (err) {
+        return false;
+    }
 }
 
 async function validateProxies(proxies, maxWorkers = 20) {

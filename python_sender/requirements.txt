@@ -2,3 +2,4 @@ dnspython
 PySocks
 dkimpy
 fpdf2
+colorama

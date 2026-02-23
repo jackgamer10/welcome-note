@@ -4,6 +4,11 @@ import random
 import os
 import json
 import argparse
+try:
+    import colorama
+    colorama.init(autoreset=True)
+except ImportError:
+    pass
 from magxxic.core.engine import CampaignEngine
 from magxxic.core.proxy_validator import validate_proxies
 

@@ -105,6 +105,11 @@ Magxxic supports various placeholders:
 node magxxic_sender.js
 ```
 
+### Windows Users
+On Windows, use the provided batch files for best results:
+- Double-click `setup.bat` to install dependencies.
+- Double-click `start_sending.bat` to run the tool with full color support.
+
 ## Statistics
 
 Upon completion, Magxxic provides a visual dashboard with:

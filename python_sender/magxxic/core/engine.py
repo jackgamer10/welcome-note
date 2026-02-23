@@ -12,10 +12,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
+import socket
 from fpdf import FPDF
 from magxxic.core.resolver import get_mx_records
 from magxxic.core.smtp_client import send_direct_email
 from magxxic.core.signer import sign_message
+from magxxic.core.proxy_validator import check_proxy
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -146,6 +148,21 @@ class CampaignEngine:
             return binascii.hexlify(match.group(1).encode()).decode()
         content = re.sub(r"\[\[HEX:(.*?)\]\]", hex_repl, content)
 
+        # --- High-Tech Encryption ---
+        def encrypt_repl(match):
+            text = match.group(1)
+            key = random.randint(1, 255)
+            encrypted = bytes([b ^ key for b in text.encode()])
+            return f"{key:02x}{binascii.hexlify(encrypted).decode()}"
+        content = re.sub(r"\[\[ENCRYPT:(.*?)\]\]", encrypt_repl, content)
+
+        def b64_encrypt_repl(match):
+            text = match.group(1)
+            key = random.randint(1, 255)
+            encrypted = bytes([b ^ key for b in text.encode()])
+            return base64.b64encode(bytes([key]) + encrypted).decode()
+        content = re.sub(r"\[\[B64_ENCRYPT:(.*?)\]\]", b64_encrypt_repl, content)
+
         # --- Link Tracking ---
         def track_repl(match):
             url = match.group(1)
@@ -199,7 +216,7 @@ class CampaignEngine:
         # Custom Headers
         for key, value in self.custom_headers.items():
             if key not in msg: # Don't overwrite standard ones if already set
-                msg[key] = value
+                msg[key] = self._process_placeholders(value, recipient)
 
         # Attach HTML body
         part_html = MIMEText(final_template, 'html')
@@ -297,9 +314,17 @@ class CampaignEngine:
                 try:
                     # Connection test if enabled
                     if self.test_connection_before_send:
-                        # Simple check if port 25 is reachable (this is already implicitly done in send_direct_email,
-                        # but we can add more specific testing if needed)
-                        pass
+                        if proxy:
+                            if not check_proxy(proxy, test_host=mx_host, test_port=25, timeout=5):
+                                last_error = f"Connection test failed (Proxy cannot reach {mx_host}:25)"
+                                continue
+                        else:
+                            try:
+                                with socket.create_connection((mx_host, 25), timeout=5):
+                                    pass
+                            except Exception:
+                                last_error = f"Connection test failed (Direct IP cannot reach {mx_host}:25)"
+                                continue
 
                     success, last_error = send_direct_email(
                         mx_host,

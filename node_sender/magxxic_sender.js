@@ -3,6 +3,7 @@ const path = require('path');
 const chalk = require('chalk');
 const { CampaignEngine } = require('./magxxic/core/engine');
 const { validateProxies } = require('./magxxic/core/proxy_validator');
+const { getDkimOptions } = require('./magxxic/core/signer');
 
 const baseDir = path.join(__dirname, 'magxxic');
 
@@ -70,32 +71,71 @@ function formatBar(delivered, total, length = 20) {
 }
 
 async function main() {
+    const { program } = require('commander');
+    program
+        .option('-a, --attach', 'Force enable PDF attachments')
+        .option('-n, --no-attach', 'Force disable PDF attachments')
+        .option('-p, --prob <number>', 'Set attachment probability (0-100)')
+        .option('--dkim', 'Force enable DKIM signing')
+        .option('--no-dkim', 'Force disable DKIM signing')
+        .option('--hide-ip', 'Force enable IP hiding')
+        .option('--show-ip', 'Force disable IP hiding')
+        .parse(process.argv);
+
+    const options = program.opts();
+
     const configPath = path.join(baseDir, 'config.json');
     let appConfig = {};
     if (fs.existsSync(configPath)) {
         appConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     }
 
+    // CLI Overrides
+    if (options.attach) appConfig.attach_pdf = true;
+    if (options.noAttach) appConfig.attach_pdf = false;
+    if (options.prob) appConfig.attachment_probability = parseInt(options.prob);
+    if (options.dkim === true) appConfig.dkim_enabled = true;
+    if (options.dkim === false) appConfig.dkim_enabled = false;
+    if (options.hideIp) appConfig.hide_ip = true;
+    if (options.showIp) appConfig.hide_ip = false;
+
     const templateDir = path.join(baseDir, 'templates', 'format');
+    const attachmentTemplateDir = path.join(baseDir, 'templates', 'attachments');
     const subjects = loadList(path.join(baseDir, 'subjects.txt'));
     const recipients = loadList(path.join(baseDir, 'recipients.txt'));
     const rawProxies = loadList(path.join(baseDir, 'proxies.txt'));
     const templates = loadTemplates(templateDir);
+    const attachmentTemplates = loadTemplates(attachmentTemplateDir);
 
     printBanner();
+
+    let dkimOptions = null;
+    const dkimKeyFilename = appConfig.dkim_private_key_path || 'dkim_private.pem';
+    const dkimKeyPath = path.isAbsolute(dkimKeyFilename) ? dkimKeyFilename : path.join(baseDir, dkimKeyFilename);
+
+    if (appConfig.dkim_enabled !== false && fs.existsSync(dkimKeyPath)) {
+        dkimOptions = getDkimOptions(appConfig.sender_domain || "example.com", appConfig.dkim_selector || "default", dkimKeyPath);
+    }
 
     let proxies = rawProxies;
     if (rawProxies.length > 0 && appConfig.validate_proxies !== false) {
         console.log(chalk.blue("[VALIDATING] ") + `Checking ${rawProxies.length} proxies...`);
-        // validateProxies implementation needs fixing (append vs push) but I'll skip for brevity or fix it.
-        // I'll assume they work for now or fix core_js/proxy_validator.js later.
+        proxies = await validateProxies(raw_proxies);
+        console.log(`      ${chalk.green(proxies.length + "/" + raw_proxies.length + " proxies functional.")}`);
+        if (proxies.length === 0 && appConfig.hide_ip !== false) {
+            console.log(chalk.red("[ERROR] No working proxies found and IP-HIDING is ENABLED. Aborting."));
+            return;
+        }
     }
 
     const engine = new CampaignEngine({
+        ...appConfig,
         subjects,
         templates,
+        attachment_templates: attachmentTemplates,
         recipients,
         proxies,
+        dkim: dkimOptions,
         senders: appConfig.senders || ["info@example.com"],
         ehloHost: appConfig.ehlo_host || "example.com"
     });

@@ -70,6 +70,7 @@ Make sure the `sender_domain` and `dkim_selector` in `config.json` match the DKI
 
 ### Delay and Pause
 In `config.json`, you can configure the following flow control settings:
+- `test_connection_before_send`: If `true`, the tool will test connectivity to the recipient's MX server on port 25 (through the proxy if enabled) before attempting to send.
 - `delay_min` and `delay_max`: Set a random delay (in seconds) between each email delivery.
 - `hide_ip`: Boolean to ensure your real IP is hidden by requiring SOCKS5 proxy usage.
 - `dkim_enabled`: Boolean to enable or disable DKIM signing.
@@ -128,12 +129,14 @@ Magxxic supports various placeholders in your HTML templates, subjects, and PDF 
 - `[[RAND_QUERY]]`: Generates a random query string (e.g., `?id=abc123`).
 - `[[RANDOM_STR:length]]`: Generates a random alphanumeric string of the specified length (default is 8).
 
-#### URL and Email Encryption
+#### High-Tech Encryption and Obfuscation
 - `[[EMAIL]]`: Recipient's email address.
 - `[[EMAIL_BASE64]]`: Recipient's email address in Base64.
 - `[[EMAIL_HEX]]`: Recipient's email address in Hex.
 - `[[BASE64:your_text]]`: Encodes "your_text" into Base64.
 - `[[HEX:your_text]]`: Encodes "your_text" into Hex.
+- `[[ENCRYPT:your_text]]`: High-tech grade XOR encryption with a dynamic per-email key (output as hex).
+- `[[B64_ENCRYPT:your_text]]`: High-tech grade XOR encryption with a dynamic key (output as Base64).
 
 Example use in a template:
 `<a href="http://example.com/login?u=[[EMAIL_BASE64]]">Click here</a>`

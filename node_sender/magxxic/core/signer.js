@@ -1,11 +1,15 @@
 const fs = require('fs');
 
-function signMessage(message, domain, selector, privateKeyPath, signMime = true) {
+function getDkimOptions(domain, selector, privateKeyPath) {
     try {
         const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
-        return message;
+        return {
+            domainName: domain,
+            keySelector: selector,
+            privateKey: privateKey
+        };
     } catch (err) {
-        return message;
+        return null;
     }
 }
 

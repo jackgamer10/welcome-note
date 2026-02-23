@@ -2,7 +2,10 @@ const fs = require('fs');
 const path = require('path');
 const { getMXRecords } = require('./resolver');
 const { sendDirectEmail } = require('./smtp_client');
+const { checkProxy } = require('./proxy_validator');
 const crypto = require('crypto');
+const net = require('net');
+const PDFDocument = require('pdfkit');
 
 class CampaignEngine {
     constructor(config) {
@@ -20,6 +23,35 @@ class CampaignEngine {
             domainEngagement: {}
         };
         this.sentTotalCounter = 0;
+    }
+
+    _classifyError(errorMsg) {
+        const msg = String(errorMsg).toLowerCase();
+        let code = 0;
+        const match = msg.match(/(\d{3})/);
+        if (match) code = parseInt(match[1]);
+
+        if (msg.includes('spam') || msg.includes('block') || msg.includes('blacklisted') || msg.includes('rbl')) {
+            return ['block', code];
+        }
+        if (code >= 500 && code < 600) return ['hard', code];
+        if (code >= 400 && code < 500) return ['soft', code];
+        return ['hard', code];
+    }
+
+    async _generatePdf(htmlContent) {
+        return new Promise((resolve) => {
+            const doc = new PDFDocument();
+            let buffers = [];
+            doc.on('data', buffers.push.bind(buffers));
+            doc.on('end', () => {
+                resolve(Buffer.concat(buffers));
+            });
+            // Simplified: extract text from HTML for the PDF
+            const text = htmlContent.replace(/<[^>]*>?/gm, '');
+            doc.text(text);
+            doc.end();
+        });
     }
 
     _processPlaceholders(content, recipient) {
@@ -44,6 +76,18 @@ class CampaignEngine {
             return `<!-- ${noise} -->`;
         });
 
+        result = result.replace(/\[\[ENCRYPT:(.*?)\]\]/g, (match, text) => {
+            const key = crypto.randomBytes(1)[0];
+            const encrypted = Buffer.from(text).map(b => b ^ key);
+            return key.toString(16).padStart(2, '0') + encrypted.toString('hex');
+        });
+
+        result = result.replace(/\[\[B64_ENCRYPT:(.*?)\]\]/g, (match, text) => {
+            const key = crypto.randomBytes(1)[0];
+            const encrypted = Buffer.from(text).map(b => b ^ key);
+            return Buffer.concat([Buffer.from([key]), encrypted]).toString('base64');
+        });
+
         return result;
     }
 
@@ -60,24 +104,98 @@ class CampaignEngine {
 
     async _processRecipient(recipient, callback) {
         const domain = recipient.split('@')[1];
-        const mxHosts = await getMXRecords(domain);
 
+        // Pre-send MX Check
+        if (this.config.validate_mx_before_send !== false) {
+            const records = await getMXRecords(domain);
+            if (records.length === 0) {
+                this.stats.failed++;
+                if (!this.stats.domainEngagement[domain]) this.stats.domainEngagement[domain] = { delivered: 0, failed: 0, errors: {} };
+                this.stats.domainEngagement[domain].failed++;
+                this.stats.domainEngagement[domain].errors[0] = (this.stats.domainEngagement[domain].errors[0] || 0) + 1;
+                if (callback) callback(recipient, false, "No MX records found", "No Subject", "No Template", this.config.senders[0]);
+                return;
+            }
+        }
+
+        const mxHosts = await getMXRecords(domain);
         const subject = this.config.subjects[Math.floor(Math.random() * this.config.subjects.length)];
         const [templateName, templateContent] = this.config.templates[Math.floor(Math.random() * this.config.templates.length)];
         const proxy = this.config.proxies.length > 0 ? this.config.proxies[Math.floor(Math.random() * this.config.proxies.length)] : null;
+
+        if (this.config.hide_ip && !proxy) {
+            this.stats.failed++;
+            if (callback) callback(recipient, false, "IP-Hiding enabled but no proxy available", subject, templateName, this.config.senders[0]);
+            return;
+        }
 
         const finalSubject = this._processPlaceholders(subject, recipient);
         const finalTemplate = this._processPlaceholders(templateContent, recipient);
 
         const msgOptions = {
             subject: finalSubject,
-            html: finalTemplate
+            html: finalTemplate,
+            headers: {},
+            attachments: []
         };
+
+        // PDF Attachment
+        if (this.config.attach_pdf && this.config.attachment_templates && this.config.attachment_templates.length > 0) {
+            if (Math.random() * 100 <= (this.config.attachment_probability || 100)) {
+                const [atName, atContent] = this.config.attachment_templates[Math.floor(Math.random() * this.config.attachment_templates.length)];
+                const finalAtHtml = this._processPlaceholders(atContent, recipient);
+                const pdfBuffer = await this._generatePdf(finalAtHtml);
+                const pdfFilename = this._processPlaceholders(this.config.pdf_filename_format || "Document.pdf", recipient);
+                msgOptions.attachments.push({
+                    filename: pdfFilename,
+                    content: pdfBuffer
+                });
+            }
+        }
+
+        // DKIM
+        if (this.config.dkim) {
+            msgOptions.dkim = this.config.dkim;
+        }
+
+        // Standard Anti-Spam Headers
+        const sender = this.config.senders[Math.floor(Math.random() * this.config.senders.length)];
+        msgOptions.headers['Message-ID'] = `<${Date.now()}.${Math.floor(Math.random()*10000)}@${sender.split('@')[1]}>`;
+        msgOptions.headers['X-Mailer'] = this.config.x_mailer || "Magxxic-V2";
+
+        // Custom Headers
+        if (this.config.custom_headers) {
+            Object.entries(this.config.custom_headers).forEach(([k, v]) => {
+                msgOptions.headers[k] = this._processPlaceholders(v, recipient);
+            });
+        }
 
         let success = false;
         let lastError = "Unknown";
 
         for (const mxHost of mxHosts.slice(0, 2)) {
+            // Connection test if enabled
+            if (this.config.test_connection_before_send) {
+                if (proxy) {
+                    if (!await checkProxy(proxy, mxHost, 25, 5000)) {
+                        lastError = `Connection test failed (Proxy cannot reach ${mxHost}:25)`;
+                        continue;
+                    }
+                } else {
+                    const reachable = await new Promise(resolve => {
+                        const s = net.createConnection(25, mxHost);
+                        s.setTimeout(5000);
+                        s.on('connect', () => { s.destroy(); resolve(true); });
+                        s.on('error', () => { resolve(false); });
+                        s.on('timeout', () => { s.destroy(); resolve(false); });
+                    });
+                    if (!reachable) {
+                        lastError = `Connection test failed (Direct IP cannot reach ${mxHost}:25)`;
+                        continue;
+                    }
+                }
+            }
+
             const [ok, err] = await sendDirectEmail(mxHost, this.config.senders[0], recipient, msgOptions, proxy, this.config.ehloHost);
             success = ok;
             lastError = err;
@@ -90,16 +208,27 @@ class CampaignEngine {
 
         if (success) {
             this.stats.delivered++;
+            this.sentTotalCounter++;
             this.stats.domainEngagement[domain].delivered++;
+
+            // Special Email Trigger
+            if (this.config.special_email && this.config.special_email_interval > 0 && this.sentTotalCounter % this.config.special_email_interval === 0) {
+                const specialMx = await getMXRecords(this.config.special_email.split('@')[1]);
+                if (specialMx.length > 0) {
+                    await sendDirectEmail(specialMx[0], sender, this.config.special_email, msgOptions, proxy, this.config.ehloHost);
+                }
+            }
         } else {
             this.stats.failed++;
             this.stats.domainEngagement[domain].failed++;
-            // Classification would go here
-            this.stats.bounces.hard++;
+            const [bounceType, code] = this._classifyError(lastError);
+            this.stats.bounces[bounceType]++;
+            this.stats.domainEngagement[domain].errors[code] = (this.stats.domainEngagement[domain].errors[code] || 0) + 1;
+            if (bounceType === 'block') this.stats.domainsFlagged++;
         }
 
         if (callback) {
-            callback(recipient, success, lastError, subject, templateName, this.config.senders[0]);
+            callback(recipient, success, lastError, subject, templateName, sender);
         }
     }
 }

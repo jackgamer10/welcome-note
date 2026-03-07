@@ -98,6 +98,8 @@ def interactive_dashboard(app_config):
             ("Proxy Validation", "validate_proxies", app_config.get('validate_proxies', True)),
             ("MX Pre-Check", "validate_mx_before_send", app_config.get('validate_mx_before_send', True)),
             ("Port 25 Test", "test_connection_before_send", app_config.get('test_connection_before_send', False)),
+            ("Dynamic EHLO", "auto_ehlo", app_config.get('auto_ehlo', False)),
+            ("SMTP Debug Logs", "smtp_debug", app_config.get('smtp_debug', False)),
         ]
 
         for i, (label, key, value) in enumerate(options, 1):

@@ -14,7 +14,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 import socket
 from fpdf import FPDF
-from magxxic.core.resolver import get_mx_records
+from magxxic.core.resolver import get_mx_records, get_ptr_record
 from magxxic.core.smtp_client import send_direct_email
 from magxxic.core.signer import sign_message
 from magxxic.core.proxy_validator import check_proxy
@@ -38,6 +38,8 @@ class CampaignEngine:
         self.ehlo_host = config.get('ehlo_host', 'example.com')
 
         # flow control settings
+        self.auto_ehlo = config.get('auto_ehlo', False)
+        self.smtp_debug = config.get('smtp_debug', False)
         self.delay_min = config.get('delay_min', 0)
         self.delay_max = config.get('delay_max', 0)
         self.batch_size = config.get('batch_size', 10)
@@ -335,13 +337,26 @@ class CampaignEngine:
                                 last_error = f"Connection test failed (Direct IP cannot reach {mx_host}:25)"
                                 continue
 
+                    # Dynamic EHLO if enabled
+                    current_ehlo = self.ehlo_host
+                    if self.auto_ehlo and proxy:
+                        # Attempt to resolve proxy IP's PTR for EHLO
+                        try:
+                            # Extract IP from proxy string
+                            proxy_parts = urlparse(proxy if proxy.startswith('socks') else f'socks5://{proxy}')
+                            if proxy_parts.hostname:
+                                current_ehlo = get_ptr_record(proxy_parts.hostname, fallback=self.ehlo_host)
+                        except:
+                            pass
+
                     success, last_error = send_direct_email(
                         mx_host,
                         sender_email,
                         recipient,
                         msg_bytes, # Pass as bytes to SMTP client
                         proxy,
-                        ehlo_host=self.ehlo_host
+                        ehlo_host=current_ehlo,
+                        debug=self.smtp_debug
                     )
                     if success:
                         break

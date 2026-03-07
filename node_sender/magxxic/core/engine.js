@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { getMXRecords } = require('./resolver');
+const { getMXRecords, getPTRRecord } = require('./resolver');
 const { sendDirectEmail } = require('./smtp_client');
 const { checkProxy } = require('./proxy_validator');
 const crypto = require('crypto');
@@ -216,6 +216,15 @@ class CampaignEngine {
         let lastError = "Unknown";
 
         for (const mxHost of mxHosts.slice(0, 2)) {
+            // Dynamic EHLO
+            let currentEhlo = this.config.ehloHost || "example.com";
+            if (this.config.auto_ehlo && proxy) {
+                try {
+                    const host = proxy.includes('://') ? new URL(proxy).hostname : proxy.split('@').pop().split(':')[0];
+                    currentEhlo = await getPTRRecord(host, currentEhlo);
+                } catch (e) {}
+            }
+
             // Connection test if enabled
             if (this.config.test_connection_before_send) {
                 if (proxy) {
@@ -238,7 +247,7 @@ class CampaignEngine {
                 }
             }
 
-            const [ok, err] = await sendDirectEmail(mxHost, this.config.senders[0], recipient, msgOptions, proxy, this.config.ehloHost);
+            const [ok, err] = await sendDirectEmail(mxHost, this.config.senders[0], recipient, msgOptions, proxy, currentEhlo, this.config.smtp_debug);
             success = ok;
             lastError = err;
             if (success) break;

@@ -1,7 +1,7 @@
 const nodemailer = require('nodemailer');
 const { SocksProxyAgent } = require('socks-proxy-agent');
 
-async function sendDirectEmail(mxHost, senderEmail, recipientEmail, msgOptions, proxy = null, ehloHost = "example.com") {
+async function sendDirectEmail(mxHost, senderEmail, recipientEmail, msgOptions, proxy = null, ehloHost = "example.com", debug = false) {
     let agent = null;
     if (proxy) {
         let proxyUrl = proxy;
@@ -16,6 +16,8 @@ async function sendDirectEmail(mxHost, senderEmail, recipientEmail, msgOptions, 
         port: 25,
         secure: false,
         name: ehloHost,
+        debug: debug,
+        logger: debug,
         proxy: agent ? agent.proxy.href : undefined,
         tls: {
             rejectUnauthorized: false

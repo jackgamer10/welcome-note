@@ -89,6 +89,8 @@ In `config.json`, you can configure the following flow control settings:
 - `tracking_url`: URL of your tracking service.
 - `x_mailer`: Custom `X-Mailer` header value.
 - `custom_headers`: Dictionary of extra MIME headers to include (supports tags).
+- `auto_ehlo`: If `true`, the tool will attempt to resolve the Reverse DNS (PTR) of the SOCKS5 proxy to use as the EHLO/HELO domain. Falls back to `ehlo_host` or `example.com`.
+- `smtp_debug`: If `true`, the full SMTP transaction will be printed to the console, allowing verification of the HELO command.
 
 ### Proxy Validation
 At startup, Magxxic can automatically test each SOCKS5 proxy in your `proxies.txt` to ensure it is functional.
@@ -138,3 +140,16 @@ Upon completion, Magxxic provides a visual dashboard with:
 ## Legal Disclaimer
 
 Strictly for **educational purposes and authorized security research only**.
+
+## Verification & Troubleshooting
+
+### Verifying HELO/EHLO
+To ensure the HELO command is being sent correctly:
+1.  **Enable SMTP Debugging**: In the configuration dashboard, toggle `SMTP Debug Logs` to **[ON]**.
+2.  **Monitor Traffic**: Use a packet sniffer like **Wireshark**. Filter for `tcp.port == 25` to see the plaintext SMTP handshake and verify the domain sent after the `EHLO` command.
+
+### Troubleshooting MX Connections
+If you see "Connection Timed Out" or "Access Denied" errors:
+- **Provider Blocks**: Check if your VPS provider blocks port 25.
+- **Proxy Issues**: Ensure your SOCKS5 proxy is functional and supports outbound port 25.
+- **PTR Failure**: If `auto_ehlo` is enabled but the lookup fails, the tool will gracefully fall back to `example.com` to ensure delivery continues.

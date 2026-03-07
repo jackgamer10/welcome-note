@@ -87,6 +87,8 @@ async function interactiveDashboard(appConfig) {
             ["Proxy Validation", "validate_proxies", appConfig.validate_proxies !== false],
             ["MX Pre-Check", "validate_mx_before_send", appConfig.validate_mx_before_send !== false],
             ["Port 25 Test", "test_connection_before_send", !!appConfig.test_connection_before_send],
+            ["Dynamic EHLO", "auto_ehlo", !!appConfig.auto_ehlo],
+            ["SMTP Debug Logs", "smtp_debug", !!appConfig.smtp_debug],
         ];
 
         options.forEach(([label, key, value], i) => {

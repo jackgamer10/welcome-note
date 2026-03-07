@@ -11,18 +11,17 @@ async function checkProxy(proxyStr, testHost = "8.8.8.8", testPort = 53, timeout
 
     try {
         const agent = new SocksProxyAgent(proxyUrl);
-        return new Promise((resolve) => {
-            agent.callback({ host: testHost, port: testPort }, {}, (err, socket) => {
-                if (err) {
-                    resolve(false);
-                } else {
-                    socket.destroy();
-                    resolve(true);
-                }
-            });
-            // Also need a timeout for the callback itself
-            setTimeout(() => resolve(false), timeout);
-        });
+        // socks-proxy-agent v7 uses a Promise-based callback(req, opts)
+        // where host/port are expected in the second argument (opts).
+        const socket = await Promise.race([
+            agent.callback({}, { host: testHost, port: testPort }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout))
+        ]);
+        if (socket) {
+            socket.destroy();
+            return true;
+        }
+        return false;
     } catch (err) {
         return false;
     }

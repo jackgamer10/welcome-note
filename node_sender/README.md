@@ -55,6 +55,15 @@ To use DKIM signing, you need to configure three main settings in `magxxic/confi
 
 Place your private key file in the `magxxic/` directory.
 
+### Direct-to-MX Connectivity Setup
+
+Direct-to-MX delivery requires a connection to the recipient's mail server on **Port 25**. Many ISPs and Cloud Providers (AWS, Azure, DigitalOcean, etc.) block outbound traffic on port 25 by default.
+
+To successfully set up the MX connection:
+1.  **Use SOCKS5 Proxies**: This tool is optimized for routing via SOCKS5. Ensure your proxies in `proxies.txt` support outbound connections to any IP on port 25.
+2.  **Check Port 25**: If you are not using a proxy, your local IP must have port 25 open. You can test this by running `telnet mx1.google.com 25`. If it times out, your port 25 is blocked.
+3.  **Enable Port 25 Test**: In `config.json`, set `"test_connection_before_send": true`. The tool will then verify if the proxy can actually reach the destination MX server before attempting to send the email.
+
 ## Advanced Features
 
 ### Delay and Pause

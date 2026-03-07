@@ -215,6 +215,17 @@ class CampaignEngine {
         let success = false;
         let lastError = "Unknown";
 
+        let attempts = 0;
+        const proxyRetries = this.config.proxy_retries || 2;
+        const timeout = this.config.timeout || 15;
+
+        while (!success && attempts <= proxyRetries) {
+            if (attempts > 0) {
+                // Pick a different proxy
+                proxy = this.config.proxies.length > 0 ? this.config.proxies[Math.floor(Math.random() * this.config.proxies.length)] : null;
+                if (!proxy && this.config.hide_ip) break;
+            }
+
         for (const mxHost of mxHosts.slice(0, 2)) {
             // Dynamic EHLO
             let currentEhlo = this.config.ehloHost || "example.com";
@@ -247,10 +258,19 @@ class CampaignEngine {
                 }
             }
 
-            const [ok, err] = await sendDirectEmail(mxHost, this.config.senders[0], recipient, msgOptions, proxy, currentEhlo, this.config.smtp_debug);
+            const [ok, err] = await sendDirectEmail(mxHost, this.config.senders[0], recipient, msgOptions, proxy, currentEhlo, this.config.smtp_debug, timeout);
             success = ok;
             lastError = err;
             if (success) break;
+        }
+
+        if (success) break;
+
+        if (String(lastError).toLowerCase().includes('timeout') || String(lastError).toLowerCase().includes('connection')) {
+            attempts++;
+        } else {
+            break;
+        }
         }
 
         if (!this.stats.domainEngagement[domain]) {

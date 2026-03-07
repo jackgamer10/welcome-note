@@ -89,6 +89,7 @@ async function interactiveDashboard(appConfig) {
             ["Port 25 Test", "test_connection_before_send", !!appConfig.test_connection_before_send],
             ["Dynamic EHLO", "auto_ehlo", !!appConfig.auto_ehlo],
             ["SMTP Debug Logs", "smtp_debug", !!appConfig.smtp_debug],
+            ["Resilient Retries", "resilient_mode", (appConfig.proxy_retries || 0) > 0],
         ];
 
         options.forEach(([label, key, value], i) => {
@@ -112,7 +113,11 @@ async function interactiveDashboard(appConfig) {
             const idx = parseInt(choice) - 1;
             if (idx >= 0 && idx < options.length) {
                 const key = options[idx][1];
-                appConfig[key] = !options[idx][2];
+                if (key === "resilient_mode") {
+                    appConfig.proxy_retries = options[idx][2] ? 0 : 3;
+                } else {
+                    appConfig[key] = !options[idx][2];
+                }
             }
         }
     }

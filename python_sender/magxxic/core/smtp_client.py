@@ -34,7 +34,7 @@ class SOCKS5SMTP(smtplib.SMTP):
         else:
             return socket.create_connection((host, port), timeout)
 
-def send_direct_email(mx_host, sender_email, recipient_email, msg_data, proxy=None, ehlo_host="example.com", debug=False):
+def send_direct_email(mx_host, sender_email, recipient_email, msg_data, proxy=None, ehlo_host="example.com", debug=False, timeout=15):
     """
     Sends an email directly to an MX host, optionally via a proxy.
     msg_data can be string or bytes.
@@ -62,7 +62,7 @@ def send_direct_email(mx_host, sender_email, recipient_email, msg_data, proxy=No
 
     try:
         # Use port 25 for direct-to-MX
-        with SOCKS5SMTP(host=mx_host, port=25, timeout=15,
+        with SOCKS5SMTP(host=mx_host, port=25, timeout=timeout,
                         proxy_host=proxy_host, proxy_port=proxy_port,
                         proxy_user=proxy_user, proxy_pass=proxy_pass) as server:
             server.set_debuglevel(1 if debug else 0)

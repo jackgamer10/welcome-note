@@ -100,6 +100,7 @@ def interactive_dashboard(app_config):
             ("Port 25 Test", "test_connection_before_send", app_config.get('test_connection_before_send', False)),
             ("Dynamic EHLO", "auto_ehlo", app_config.get('auto_ehlo', False)),
             ("SMTP Debug Logs", "smtp_debug", app_config.get('smtp_debug', False)),
+            ("Resilient Retries", "resilient_mode", app_config.get('proxy_retries', 0) > 0),
         ]
 
         for i, (label, key, value) in enumerate(options, 1):
@@ -121,7 +122,12 @@ def interactive_dashboard(app_config):
             idx = int(choice) - 1
             if 0 <= idx < len(options):
                 key = options[idx][1]
-                app_config[key] = not app_config.get(key, options[idx][2])
+                if key == "resilient_mode":
+                    # Special handling for proxy_retries toggle
+                    current = app_config.get('proxy_retries', 0)
+                    app_config['proxy_retries'] = 3 if current == 0 else 0
+                else:
+                    app_config[key] = not app_config.get(key, options[idx][2])
         else:
             continue
 

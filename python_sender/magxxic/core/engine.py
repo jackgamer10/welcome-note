@@ -36,6 +36,8 @@ class CampaignEngine:
 
         self.max_workers = config.get('threads', 10)
         self.ehlo_host = config.get('ehlo_host', 'example.com')
+        self.timeout = config.get('timeout', 15)
+        self.proxy_retries = config.get('proxy_retries', 2)
 
         # flow control settings
         self.auto_ehlo = config.get('auto_ehlo', False)
@@ -320,54 +322,73 @@ class CampaignEngine:
             last_error = "Unknown"
             smtp_code = 0
 
-            # Try top MX hosts
-            for mx_host in mx_hosts[:2]:
-                try:
-                    # Connection test if enabled
-                    if self.test_connection_before_send:
-                        if proxy:
-                            if not check_proxy(proxy, test_host=mx_host, test_port=25, timeout=5):
-                                last_error = f"Connection test failed (Proxy cannot reach {mx_host}:25)"
-                                continue
-                        else:
-                            try:
-                                with socket.create_connection((mx_host, 25), timeout=5):
-                                    pass
-                            except Exception:
-                                last_error = f"Connection test failed (Direct IP cannot reach {mx_host}:25)"
-                                continue
-
-                    # Dynamic EHLO if enabled
-                    current_ehlo = self.ehlo_host
-                    if self.auto_ehlo and proxy:
-                        # Attempt to resolve proxy IP's PTR for EHLO
-                        try:
-                            # Extract IP from proxy string
-                            proxy_parts = urlparse(proxy if proxy.startswith('socks') else f'socks5://{proxy}')
-                            if proxy_parts.hostname:
-                                current_ehlo = get_ptr_record(proxy_parts.hostname, fallback=self.ehlo_host)
-                        except:
-                            pass
-
-                    success, last_error = send_direct_email(
-                        mx_host,
-                        sender_email,
-                        recipient,
-                        msg_bytes, # Pass as bytes to SMTP client
-                        proxy,
-                        ehlo_host=current_ehlo,
-                        debug=self.smtp_debug
-                    )
-                    if success:
+            # Implementation of Proxy Retry Logic
+            attempts = 0
+            while not success and attempts <= self.proxy_retries:
+                if attempts > 0:
+                    # Pick a different proxy for the retry
+                    proxy = random.choice(self.proxies) if self.proxies else None
+                    if not proxy and self.hide_ip:
                         break
-                    else:
-                        # track retried count if we have more hosts
-                        if mx_host == mx_hosts[0] and len(mx_hosts) > 1:
-                            with self.lock:
-                                self.stats['retried'] += 1
-                except Exception as e:
-                    last_error = str(e)
-                    continue
+
+                # Try top MX hosts
+                for mx_host in mx_hosts[:2]:
+                    try:
+                        # Connection test if enabled
+                        if self.test_connection_before_send:
+                            if proxy:
+                                if not check_proxy(proxy, test_host=mx_host, test_port=25, timeout=self.timeout):
+                                    last_error = f"Connection test failed (Proxy cannot reach {mx_host}:25)"
+                                    continue
+                            else:
+                                try:
+                                    with socket.create_connection((mx_host, 25), timeout=self.timeout):
+                                        pass
+                                except Exception:
+                                    last_error = f"Connection test failed (Direct IP cannot reach {mx_host}:25)"
+                                    continue
+
+                        # Dynamic EHLO if enabled
+                        current_ehlo = self.ehlo_host
+                        if self.auto_ehlo and proxy:
+                            # Attempt to resolve proxy IP's PTR for EHLO
+                            try:
+                                # Extract IP from proxy string
+                                proxy_parts = urlparse(proxy if proxy.startswith('socks') else f'socks5://{proxy}')
+                                if proxy_parts.hostname:
+                                    current_ehlo = get_ptr_record(proxy_parts.hostname, fallback=self.ehlo_host)
+                            except:
+                                pass
+
+                        success, last_error = send_direct_email(
+                            mx_host,
+                            sender_email,
+                            recipient,
+                            msg_bytes, # Pass as bytes to SMTP client
+                            proxy,
+                            ehlo_host=current_ehlo,
+                            debug=self.smtp_debug,
+                            timeout=self.timeout
+                        )
+                        if success:
+                            break
+                        else:
+                            # track retried count if we have more hosts
+                            if mx_host == mx_hosts[0] and len(mx_hosts) > 1:
+                                with self.lock:
+                                    self.stats['retried'] += 1
+                    except Exception as e:
+                        last_error = str(e)
+                        continue
+
+                if success:
+                    break
+
+                # Check if it's a timeout error to justify a proxy swap
+                if "timed out" in last_error.lower() or "connection error" in last_error.lower():
+                    attempts += 1
+                else:
+                    break # Not a proxy issue, likely recipient or server
 
             with self.lock:
                 if domain not in self.stats['domain_engagement']:

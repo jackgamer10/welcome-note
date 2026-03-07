@@ -24,6 +24,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 class CampaignEngine:
     def __init__(self, config):
+        self.config = config
         self.subjects = config.get('subjects', [])
         self.templates = config.get('templates', [])
         self.attachment_templates = config.get('attachment_templates', [])
@@ -212,6 +213,14 @@ class CampaignEngine:
         msg['Message-ID'] = f"<{datetime.now().strftime('%Y%m%d%H%M%S')}.{random.randint(1000,9999)}@{sender.split('@')[-1]}>"
         msg['X-Mailer'] = self.x_mailer
         msg['Date'] = datetime.now().strftime("%a, %d %b %Y %H:%M:%S +0000")
+
+        # Military Grade Headers if enabled
+        if self.config.get('military_grade_headers', False):
+            msg['X-Security-Level'] = 'Classified'
+            msg['X-Transmission-Encryption'] = 'AES-256-GCM'
+            msg['X-Originating-IP-Hiding'] = 'Enabled'
+            msg['X-Protocol-Type'] = 'Scorpion-Secure'
+            msg['X-Content-Signature'] = f"sha256:{''.join(random.choices(string.hexdigits.lower(), k=32))}"
 
         # Custom Headers
         for key, value in self.custom_headers.items():

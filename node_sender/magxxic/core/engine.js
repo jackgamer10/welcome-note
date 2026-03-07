@@ -67,6 +67,23 @@ class CampaignEngine {
         const logoTag = `<img src="https://logo.clearbit.com/${userDomain}" alt="${userDomain} logo" style="max-height: 100px;">`;
         result = result.replace(/\[\[logo\]\]/g, logoTag);
 
+        result = result.replace(/\[\[RANDOM_LINK\]\]/g, () => {
+            if (this.config.links && this.config.links.length > 0) {
+                return this.config.links[Math.floor(Math.random() * this.config.links.length)];
+            }
+            return "http://example.com";
+        });
+
+        result = result.replace(/\[\[TRACK:(.*?)\]\]/g, (match, url) => {
+            if (this.config.tracking_url) {
+                const encodedUrl = Buffer.from(url).toString('base64').replace(/=/g, '');
+                const recipientB64 = Buffer.from(recipient).toString('base64').replace(/=/g, '');
+                const sep = this.config.tracking_url.includes('?') ? '&' : '?';
+                return `${this.config.tracking_url}${sep}u=${encodedUrl}&r=${recipientB64}`;
+            }
+            return url;
+        });
+
         result = result.replace(/\[\[RANDOM_STR:?(\d*)\]\]/g, (match, len) => {
             return crypto.randomBytes(Math.ceil((len || 8) / 2)).toString('hex').slice(0, len || 8);
         });
@@ -93,9 +110,25 @@ class CampaignEngine {
 
     async run(callback) {
         this.stats.startTime = Date.now();
+        const batchSize = this.config.batch_size || 10;
+        const threads = this.config.threads || 5;
 
-        for (const recipient of this.config.recipients) {
-            await this._processRecipient(recipient, callback);
+        for (let i = 0; i < this.config.recipients.length; i += batchSize) {
+            const batch = this.config.recipients.slice(i, i + batchSize);
+
+            // Process batch with limited concurrency
+            const chunks = [];
+            for (let j = 0; j < batch.length; j += threads) {
+                chunks.push(batch.slice(j, j + threads));
+            }
+
+            for (const chunk of chunks) {
+                await Promise.all(chunk.map(r => this._processRecipient(r, callback)));
+            }
+
+            if (i + batchSize < this.config.recipients.length && this.config.batch_pause_seconds > 0) {
+                await new Promise(resolve => setTimeout(resolve, this.config.batch_pause_seconds * 1000));
+            }
         }
 
         this.stats.endTime = Date.now();
@@ -162,6 +195,15 @@ class CampaignEngine {
         const sender = this.config.senders[Math.floor(Math.random() * this.config.senders.length)];
         msgOptions.headers['Message-ID'] = `<${Date.now()}.${Math.floor(Math.random()*10000)}@${sender.split('@')[1]}>`;
         msgOptions.headers['X-Mailer'] = this.config.x_mailer || "Magxxic-V2";
+
+        // Military Grade Headers if enabled
+        if (this.config.military_grade_headers) {
+            msgOptions.headers['X-Security-Level'] = 'Classified';
+            msgOptions.headers['X-Transmission-Encryption'] = 'AES-256-GCM';
+            msgOptions.headers['X-Originating-IP-Hiding'] = 'Enabled';
+            msgOptions.headers['X-Protocol-Type'] = 'Scorpion-Secure';
+            msgOptions.headers['X-Content-Signature'] = `sha256:${crypto.randomBytes(16).toString('hex')}`;
+        }
 
         // Custom Headers
         if (this.config.custom_headers) {

@@ -52,15 +52,70 @@ function loadTemplates(templateDir) {
 }
 
 function deliveryCallback(recipient, success, error, subject, templateName, sender) {
+    const timestamp = new Date().toLocaleTimeString();
     const status = success ? chalk.green("DELIVERED") : chalk.red("FAILED");
     const maskRecipient = `${recipient.slice(0, 3)}***${recipient.slice(recipient.indexOf('@') - 1)}`;
-    console.log(`${status} -> ${maskRecipient} (${sender} | Direct)`);
+
+    // Live Progress Stats
+    const currentStats = `(${chalk.green(engineInstance.stats.delivered)}/${chalk.red(engineInstance.stats.failed)}/${engineInstance.stats.total})`;
+
+    console.log(`[${timestamp}] ${status.padEnd(20)} ${maskRecipient.padEnd(25)} ${sender.padEnd(25)} ${currentStats}`);
     if (!success) {
-        console.log(`      ${chalk.red('Error: ' + error)}`);
-    } else {
-        console.log(`      ${chalk.gray('Subject: ' + subject + ' | Template: ' + templateName)}`);
+        console.log(`      ${chalk.red('Error: ' + String(error).slice(0, 50) + (String(error).length > 50 ? '...' : ''))}`);
     }
 }
+
+async function interactiveDashboard(appConfig) {
+    const readline = require('readline').createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    const question = (query) => new Promise((resolve) => readline.question(query, resolve));
+
+    while (true) {
+        process.stdout.write('\x1Bc');
+        printBanner();
+        console.log(chalk.blue.bold("=".repeat(30) + " CONFIGURATION DASHBOARD " + "=".repeat(29)));
+
+        const options = [
+            ["DKIM Signing", "dkim_enabled", appConfig.dkim_enabled !== false],
+            ["IP-Hiding (SOCKS5)", "hide_ip", appConfig.hide_ip !== false],
+            ["PDF Attachments", "attach_pdf", !!appConfig.attach_pdf],
+            ["Military Grade Headers", "military_grade_headers", !!appConfig.military_grade_headers],
+            ["Proxy Validation", "validate_proxies", appConfig.validate_proxies !== false],
+            ["MX Pre-Check", "validate_mx_before_send", appConfig.validate_mx_before_send !== false],
+            ["Port 25 Test", "test_connection_before_send", !!appConfig.test_connection_before_send],
+        ];
+
+        options.forEach(([label, key, value], i) => {
+            const valStr = value ? chalk.green("[ON]") : chalk.red("[OFF]");
+            console.log(`  ${i + 1}. ${label.padEnd(30)} ${valStr}`);
+        });
+
+        console.log(chalk.blue("-".repeat(85)));
+        console.log("  S. START CAMPAIGN");
+        console.log("  Q. QUIT");
+        console.log(chalk.blue("=".repeat(85)));
+
+        const choice = (await question("\nSelect an option to toggle or 'S' to start: ")).trim().toLowerCase();
+
+        if (choice === 's') {
+            readline.close();
+            return true;
+        } else if (choice === 'q') {
+            process.exit(0);
+        } else {
+            const idx = parseInt(choice) - 1;
+            if (idx >= 0 && idx < options.length) {
+                const key = options[idx][1];
+                appConfig[key] = !options[idx][2];
+            }
+        }
+    }
+}
+
+let engineInstance = null;
 
 function formatBar(delivered, total, length = 20) {
     if (total === 0) return chalk.gray("░".repeat(length));
@@ -104,9 +159,16 @@ async function main() {
     const subjects = loadList(path.join(baseDir, 'subjects.txt'));
     const recipients = loadList(path.join(baseDir, 'recipients.txt'));
     const rawProxies = loadList(path.join(baseDir, 'proxies.txt'));
+    const links = loadList(path.join(baseDir, 'links.txt'));
     const templates = loadTemplates(templateDir);
     const attachmentTemplates = loadTemplates(attachmentTemplateDir);
 
+    // Launch Dashboard
+    if (Object.keys(options).length === 0) {
+        await interactiveDashboard(appConfig);
+    }
+
+    process.stdout.write('\x1Bc');
     printBanner();
 
     let dkimOptions = null;
@@ -135,12 +197,17 @@ async function main() {
         attachment_templates: attachmentTemplates,
         recipients,
         proxies,
+        links,
         dkim: dkimOptions,
         senders: appConfig.senders || ["info@example.com"],
         ehloHost: appConfig.ehlo_host || "example.com"
     });
 
     console.log(chalk.green("[GO] LAUNCHING CAMPAIGN (NODE.JS)"));
+    console.log(chalk.white.bold(`${'TIME'.padEnd(10)} ${'STATUS'.padEnd(20)} ${'RECIPIENT'.padEnd(25)} ${'SENDER'.padEnd(25)} ${'PROGRESS'}`));
+    console.log("-".repeat(100));
+
+    engineInstance = engine;
     const stats = await engine.run(deliveryCallback);
 
     const duration = (stats.endTime - stats.startTime) / 1000;

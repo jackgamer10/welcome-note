@@ -13,6 +13,9 @@ Magxxic is a high-performance, direct-to-MX email delivery tool designed for res
 - **Delay & Pause**: Configurable random delay between emails and pause between batches to avoid rate limiting.
 - **Dynamic Tags**: Support for dynamic placeholders like `[[TIME]]`, `[[DATE]]`, `[[DEVICE]]`, etc.
 - **URL/Email Encryption**: Built-in support for obfuscating URLs and recipient emails (Base64/Hex/XOR) in templates.
+- **Interactive Dashboard**: Toggle settings (DKIM, PDF, IP-Hiding) through an interactive CLI menu.
+- **Military Grade Headers**: Use advanced, tech-styled MIME headers for emails.
+- **Link Rotator**: Rotate links from `links.txt` for maximum variety.
 - **HTML to PDF Attachment**: Automatically convert separate HTML attachment templates into PDF attachments.
 - **Easy Configuration**: Manage all settings via a JSON configuration file.
 

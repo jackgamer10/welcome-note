@@ -4,6 +4,7 @@ import random
 import os
 import json
 import argparse
+from datetime import datetime
 try:
     import colorama
     colorama.init(autoreset=True)
@@ -59,16 +60,21 @@ def load_templates(template_dir):
     return templates
 
 def delivery_callback(recipient, success, error, subject, template_name, sender):
+    # Global stats for live update
+    global engine_instance
+    stats = engine_instance.stats
+
+    timestamp = datetime.now().strftime("%H:%M:%S")
     status = "\033[32mDELIVERED\033[0m" if success else "\033[31mFAILED\033[0m"
     mask_recipient = f"{recipient[:3]}***{recipient[recipient.find('@')-1:]}"
-    print(f"{status} -> {mask_recipient} ({sender} | Direct)")
+
+    # Table columns: [TIME] [STATUS] [RECIPIENT] [SENDER] [STATS]
+    stats_str = f"(\033[32m{stats['delivered']}\033[0m/\033[31m{stats['failed']}\033[0m/{stats['total']})"
+
+    print(f"[{timestamp}] {status:<20} {mask_recipient:<25} {sender:<25} {stats_str}")
     if not success:
-        err_msg = str(error)
-        if "[Errno 111] Connection refused" in err_msg or "Proxy connection failed" in err_msg or "timed out" in err_msg:
-             err_msg = "Connection failed (Check Proxy/MX Connectivity)"
+        err_msg = str(error)[:50] + "..." if len(str(error)) > 50 else str(error)
         print(f"      \033[31mError: {err_msg}\033[0m")
-    else:
-        print(f"      \033[90mSubject: {subject} | Template: {template_name}\033[0m")
 
 def format_bar(delivered, total, length=20):
     if total == 0: return "\033[90m" + "░" * length + "\033[0m"
@@ -77,7 +83,49 @@ def format_bar(delivered, total, length=20):
     color = "\033[32m" if pct > 70 else "\033[33m" if pct > 30 else "\033[31m"
     return color + "█" * filled + "\033[90m" + "░" * (length - filled) + "\033[0m"
 
+def interactive_dashboard(app_config):
+    while True:
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print_banner()
+        print(f"\033[1;34m{' CONFIGURATION DASHBOARD ':=^85}\033[0m")
+
+        options = [
+            ("DKIM Signing", "dkim_enabled", app_config.get('dkim_enabled', True)),
+            ("IP-Hiding (SOCKS5)", "hide_ip", app_config.get('hide_ip', True)),
+            ("PDF Attachments", "attach_pdf", app_config.get('attach_pdf', False)),
+            ("Military Grade Headers", "military_grade_headers", app_config.get('military_grade_headers', False)),
+            ("Proxy Validation", "validate_proxies", app_config.get('validate_proxies', True)),
+            ("MX Pre-Check", "validate_mx_before_send", app_config.get('validate_mx_before_send', True)),
+            ("Port 25 Test", "test_connection_before_send", app_config.get('test_connection_before_send', False)),
+        ]
+
+        for i, (label, key, value) in enumerate(options, 1):
+            val_str = "\033[32m[ON]\033[0m" if value else "\033[31m[OFF]\033[0m"
+            print(f"  {i}. {label:<30} {val_str}")
+
+        print("\033[34m" + "-"*85 + "\033[0m")
+        print("  S. START CAMPAIGN")
+        print("  Q. QUIT")
+        print("\033[34m" + "="*85 + "\033[0m")
+
+        choice = input("\nSelect an option to toggle or 'S' to start: ").strip().lower()
+
+        if choice == 's':
+            return True
+        elif choice == 'q':
+            sys.exit(0)
+        elif choice.isdigit():
+            idx = int(choice) - 1
+            if 0 <= idx < len(options):
+                key = options[idx][1]
+                app_config[key] = not app_config.get(key, options[idx][2])
+        else:
+            continue
+
+engine_instance = None
+
 def main():
+    global engine_instance
     try:
         # Argument Parsing
         parser = argparse.ArgumentParser(description="Magxxic Direct-to-MX Sender")
@@ -138,6 +186,11 @@ def main():
         templates = load_templates(template_dir)
         attachment_templates = load_templates(attachment_template_dir)
 
+        # Launch Dashboard
+        if not any(vars(args).values()): # Only show if no CLI args provided
+            interactive_dashboard(app_config)
+
+        os.system('cls' if os.name == 'nt' else 'clear')
         print_banner(version="2.2.1")
 
         # Proxy Validation
@@ -237,7 +290,10 @@ def main():
         })
 
         print(f"\033[32m[GO] LAUNCHING CAMPAIGN for {len(recipients)} recipients\033[0m")
+        print(f"\033[1;37m{'TIME':<10} {'STATUS':<20} {'RECIPIENT':<25} {'SENDER':<25} {'PROGRESS'}\033[0m")
+        print("-" * 100)
 
+        engine_instance = engine
         stats = engine.run(callback=delivery_callback)
 
         duration = stats['end_time'] - stats['start_time']

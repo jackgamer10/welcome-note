@@ -17,7 +17,12 @@ Magxxic is a high-performance, direct-to-MX email delivery tool designed for res
 - **Military Grade Headers**: Use advanced, tech-styled MIME headers for emails.
 - **Link Rotator**: Rotate links from `links.txt` for maximum variety.
 - **HTML to PDF Attachment**: Automatically convert separate HTML attachment templates into PDF attachments.
+- **Licensing & Activation**: Secure HWID-based activation system for new users.
 - **Easy Configuration**: Manage all settings via a JSON configuration file.
+
+## Activation
+
+Upon the first run, Magxxic will generate a unique **Hardware ID (HWID)** for your system. To activate the software, you must provide this HWID to an administrator to receive an **Activation Token**. Once activated, a `license.json` file will be created in the `magxxic/` directory to store your credentials locally.
 
 ## Prerequisites
 

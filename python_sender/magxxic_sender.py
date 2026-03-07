@@ -12,6 +12,7 @@ except ImportError:
     pass
 from magxxic.core.engine import CampaignEngine
 from magxxic.core.proxy_validator import validate_proxies
+from magxxic.core.licensing import check_license
 
 # Set base_dir to the magxxic directory
 base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'magxxic')
@@ -127,6 +128,9 @@ engine_instance = None
 def main():
     global engine_instance
     try:
+        # Check License
+        if not check_license(base_dir):
+            sys.exit(0)
         # Argument Parsing
         parser = argparse.ArgumentParser(description="Magxxic Direct-to-MX Sender")
         parser.add_argument("-a", "--attach", action="store_true", help="Force enable PDF attachments")

@@ -4,6 +4,7 @@ const chalk = require('chalk');
 const { CampaignEngine } = require('./magxxic/core/engine');
 const { validateProxies } = require('./magxxic/core/proxy_validator');
 const { getDkimOptions } = require('./magxxic/core/signer');
+const { checkLicense } = require('./magxxic/core/licensing');
 
 const baseDir = path.join(__dirname, 'magxxic');
 
@@ -126,6 +127,11 @@ function formatBar(delivered, total, length = 20) {
 }
 
 async function main() {
+    // Check License
+    if (!await checkLicense(baseDir)) {
+        process.exit(0);
+    }
+
     const { program } = require('commander');
     program
         .option('-a, --attach', 'Force enable PDF attachments')

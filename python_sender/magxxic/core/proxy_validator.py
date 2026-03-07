@@ -32,16 +32,21 @@ def check_proxy(proxy_str, test_host="8.8.8.8", test_port=53, timeout=5):
     except Exception:
         return False
 
-def validate_proxies(proxies, max_workers=20):
+def validate_proxies(proxies, max_workers=20, test_smtp=False):
     """
     Validate a list of proxies concurrently and return only the working ones.
+    If test_smtp is True, it tests port 25 connectivity.
     """
     if not proxies:
         return []
 
+    # Use port 25 for testing if requested, otherwise 53 (DNS)
+    test_port = 25 if test_smtp else 53
+    test_host = "smtp.google.com" if test_smtp else "8.8.8.8"
+
     working_proxies = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        future_to_proxy = {executor.submit(check_proxy, p): p for p in proxies}
+        future_to_proxy = {executor.submit(check_proxy, p, test_host=test_host, test_port=test_port): p for p in proxies}
         for future in future_to_proxy:
             proxy = future_to_proxy[future]
             try:

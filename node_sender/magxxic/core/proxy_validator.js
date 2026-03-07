@@ -27,8 +27,11 @@ async function checkProxy(proxyStr, testHost = "8.8.8.8", testPort = 53, timeout
     }
 }
 
-async function validateProxies(proxies, maxWorkers = 20) {
+async function validateProxies(proxies, maxWorkers = 20, testSmtp = false) {
     if (!proxies || proxies.length === 0) return [];
+
+    const testPort = testSmtp ? 25 : 53;
+    const testHost = testSmtp ? "smtp.google.com" : "8.8.8.8";
 
     const workingProxies = [];
     const chunks = [];
@@ -37,7 +40,7 @@ async function validateProxies(proxies, maxWorkers = 20) {
     }
 
     for (const chunk of chunks) {
-        const results = await Promise.all(chunk.map(p => checkProxy(p)));
+        const results = await Promise.all(chunk.map(p => checkProxy(p, testHost, testPort)));
         results.forEach((res, i) => {
             if (res) workingProxies.push(chunk[i]);
         });

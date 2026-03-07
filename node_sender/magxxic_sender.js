@@ -195,7 +195,7 @@ async function main() {
     let proxies = rawProxies;
     if (rawProxies.length > 0 && appConfig.validate_proxies !== false) {
         console.log(chalk.blue("[VALIDATING] ") + `Checking ${rawProxies.length} proxies...`);
-        proxies = await validateProxies(rawProxies);
+        proxies = await validateProxies(rawProxies, 20, !!appConfig.test_connection_before_send);
         console.log(`      ${chalk.green(proxies.length + "/" + rawProxies.length + " proxies functional.")}`);
         if (proxies.length === 0 && appConfig.hide_ip !== false) {
             console.log(chalk.red("[ERROR] No working proxies found and IP-HIDING is ENABLED. Aborting."));

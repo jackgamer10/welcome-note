@@ -209,7 +209,7 @@ def main():
         proxies = raw_proxies
         if raw_proxies and app_config.get('validate_proxies', True):
             print(f"\033[34m[VALIDATING]\033[0m Checking {len(raw_proxies)} proxies...")
-            proxies = validate_proxies(raw_proxies)
+            proxies = validate_proxies(raw_proxies, test_smtp=app_config.get('test_connection_before_send', False))
             print(f"      \033[32m{len(proxies)}/{len(raw_proxies)} proxies functional.\033[0m")
             if not proxies and app_config.get('hide_ip', True):
                 print("\033[31m[ERROR] No working proxies found and IP-Hiding is ENABLED. Aborting.\033[0m")

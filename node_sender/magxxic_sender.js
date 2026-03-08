@@ -184,6 +184,25 @@ async function main() {
     process.stdout.write('\x1Bc');
     printBanner();
 
+    // Local Port 25 Sanity Check
+    if (appConfig.hide_ip === false || rawProxies.length === 0) {
+        console.log(chalk.blue("[CHECK] ") + "Testing local outbound Port 25...");
+        const reachable = await new Promise(resolve => {
+            const s = require('net').createConnection(25, "smtp.google.com");
+            s.setTimeout(5000);
+            s.on('connect', () => { s.destroy(); resolve(true); });
+            s.on('error', () => { resolve(false); });
+            s.on('timeout', () => { s.destroy(); resolve(false); });
+        });
+        if (reachable) {
+            console.log(`      ${chalk.green("Local Port 25: OPEN")}`);
+        } else {
+            console.log(`      ${chalk.yellow("[WARNING] Local Port 25 is CLOSED/BLOCKED.")}`);
+            console.log(`                Direct delivery will fail without a functional SOCKS5 proxy.`);
+            await new Promise(r => setTimeout(r, 2000));
+        }
+    }
+
     let dkimOptions = null;
     const dkimKeyFilename = appConfig.dkim_private_key_path || 'dkim_private.pem';
     const dkimKeyPath = path.isAbsolute(dkimKeyFilename) ? dkimKeyFilename : path.join(baseDir, dkimKeyFilename);

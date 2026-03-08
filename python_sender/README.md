@@ -72,8 +72,12 @@ Place your private key file in the `magxxic/` directory.
 Direct-to-MX delivery requires a connection to the recipient's mail server on **Port 25**. Many ISPs and Cloud Providers (AWS, Azure, DigitalOcean, etc.) block outbound traffic on port 25 by default.
 
 To successfully set up the MX connection:
-1.  **Use SOCKS5 Proxies (Port 25 Support Required)**: This tool is optimized for routing via SOCKS5. **Crucially, your proxies must support outbound connections to any IP on port 25.** Standard "residential" or "web" SOCKS5 proxies often block port 25 to prevent spam. You need specialized proxies that allow SMTP traffic.
-2.  **Check Port 25**: If you are not using a proxy, your local IP must have port 25 open. You can test this by running `telnet mx1.google.com 25`. If it times out, your port 25 is blocked.
+1.  **Using SOCKS5 Proxies (Recommended)**:
+    - **No Local Port 25 Required**: If you route through a SOCKS5 proxy, your local system (or RDP) does **NOT** need port 25 open. The connection to the recipient is handled by the proxy server.
+    - **Proxy Port 25 Support Required**: **Crucially, your proxies must support outbound connections to any IP on port 25.** Standard "residential" or "web" SOCKS5 proxies often block port 25. You need specialized "SMTP-enabled" proxies.
+2.  **Direct Connection (No Proxy)**:
+    - **Local Port 25 MUST be open**: If you are not using a proxy (or if `hide_ip` is disabled), your local IP address (or RDP server IP) must have port 25 open for outbound traffic. Many VPS providers block this by default.
+    - **Check Port 25**: You can test this by running `telnet smtp.google.com 25` from your system. If it times out, port 25 is blocked.
 3.  **Enable Port 25 Test**: In `config.json`, set `"test_connection_before_send": true`. The tool will then verify if the proxy can actually reach the destination MX server before attempting to send the email.
 
 **Generating a DKIM Key:**

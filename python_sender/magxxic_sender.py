@@ -205,6 +205,17 @@ def main():
         os.system('cls' if os.name == 'nt' else 'clear')
         print_banner(version="2.2.1")
 
+        # Local Port 25 Sanity Check
+        if not app_config.get('hide_ip', True) or not raw_proxies:
+            print(f"\033[34m[CHECK]\033[0m Testing local outbound Port 25...")
+            try:
+                with socket.create_connection(("smtp.google.com", 25), timeout=5):
+                    print(f"      \033[32mLocal Port 25: OPEN\033[0m")
+            except:
+                print(f"      \033[33m[WARNING] Local Port 25 is CLOSED/BLOCKED.\033[0m")
+                print(f"                Direct delivery will fail without a functional SOCKS5 proxy.")
+                time.sleep(2)
+
         # Proxy Validation
         proxies = raw_proxies
         if raw_proxies and app_config.get('validate_proxies', True):

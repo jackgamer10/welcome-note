@@ -1,0 +1,16 @@
+{
+  "name": "magxxic-sender",
+  "version": "2.2.1",
+  "description": "Direct-to-MX email delivery tool",
+  "main": "magxxic_sender.js",
+  "scripts": {
+    "start": "node magxxic_sender.js"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^9.4.1",
+    "nodemailer": "^6.8.0",
+    "socks-proxy-agent": "^7.0.0",
+    "pdfkit": "^0.13.0"
+  }
+}

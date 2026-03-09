@@ -370,46 +370,46 @@ class CampaignEngine:
                                     last_error = f"Connection test failed (Direct IP cannot reach {mx_host}:25)"
                                     continue
 
-                    # Integrated Stealth Identity
-                    # Dynamic EHLO if enabled
-                    current_ehlo = self.ehlo_host
+                        # Integrated Stealth Identity
+                        # Dynamic EHLO if enabled
+                        current_ehlo = self.ehlo_host
 
-                    # Use identity for EHLO
-                    target_for_ehlo = proxy if proxy else stealth_proxy
-                    if target_for_ehlo:
-                        try:
-                            p_url = target_for_ehlo if '://' in target_for_ehlo else f'socks5://{target_for_ehlo}'
-                            current_ehlo = urlparse(p_url).hostname
-                        except:
-                            pass
+                        # Use identity for EHLO
+                        target_for_ehlo = proxy if proxy else stealth_proxy
+                        if target_for_ehlo:
+                            try:
+                                p_url = target_for_ehlo if '://' in target_for_ehlo else f'socks5://{target_for_ehlo}'
+                                current_ehlo = urlparse(p_url).hostname
+                            except:
+                                pass
 
-                    if self.auto_ehlo and current_ehlo:
-                        # Attempt to resolve EHLO hostname to its PTR for extra legitimacy
-                        current_ehlo = get_ptr_record(current_ehlo, fallback=current_ehlo)
+                        if self.auto_ehlo and current_ehlo:
+                            # Attempt to resolve EHLO hostname to its PTR for extra legitimacy
+                            current_ehlo = get_ptr_record(current_ehlo, fallback=current_ehlo)
 
-                    # Rotate Local IP if enabled
-                    local_ip = None
-                    if self.rotate_local_ips and self.local_ips:
-                        local_ip = random.choice(self.local_ips)
+                        # Rotate Local IP if enabled
+                        local_ip = None
+                        if self.rotate_local_ips and self.local_ips:
+                            local_ip = random.choice(self.local_ips)
 
-                    success, last_error = send_direct_email(
-                        mx_host,
-                        sender_email,
-                        recipient,
-                        msg_bytes, # Pass as bytes to SMTP client
-                        proxy,
-                        ehlo_host=current_ehlo,
-                        debug=self.smtp_debug,
-                        timeout=self.timeout,
-                        source_address=local_ip
-                    )
-                    if success:
-                        break
-                    else:
-                        # track retried count if we have more hosts
-                        if mx_host == mx_hosts[0] and len(mx_hosts) > 1:
-                            with self.lock:
-                                self.stats['retried'] += 1
+                        success, last_error = send_direct_email(
+                            mx_host,
+                            sender_email,
+                            recipient,
+                            msg_bytes, # Pass as bytes to SMTP client
+                            proxy,
+                            ehlo_host=current_ehlo,
+                            debug=self.smtp_debug,
+                            timeout=self.timeout,
+                            source_address=local_ip
+                        )
+                        if success:
+                            break
+                        else:
+                            # track retried count if we have more hosts
+                            if mx_host == mx_hosts[0] and len(mx_hosts) > 1:
+                                with self.lock:
+                                    self.stats['retried'] += 1
                     except Exception as e:
                         last_error = str(e)
                         continue

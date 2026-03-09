@@ -26,6 +26,7 @@ class CampaignEngine:
     def __init__(self, config):
         self.config = config
         self.subjects = config.get('subjects', [])
+        self.local_ips = config.get('local_ips', [])
         self.templates = config.get('templates', [])
         self.attachment_templates = config.get('attachment_templates', [])
         self.recipients = config.get('recipients', [])
@@ -38,6 +39,8 @@ class CampaignEngine:
         self.ehlo_host = config.get('ehlo_host', 'example.com')
         self.timeout = config.get('timeout', 15)
         self.proxy_retries = config.get('proxy_retries', 2)
+        self.rotate_local_ips = config.get('rotate_local_ips', False)
+        self.forge_relay_headers = config.get('forge_relay_headers', False)
 
         # flow control settings
         self.auto_ehlo = config.get('auto_ehlo', False)
@@ -202,7 +205,7 @@ class CampaignEngine:
             logging.error(f"PDF conversion error: {e}")
             return None
 
-    def _prepare_message(self, recipient, subject, template_content, attachment_template_content=None):
+    def _prepare_message(self, recipient, subject, template_content, attachment_template_content=None, stealth_host=None):
         # Apply placeholders to subject and template
         final_subject = self._process_placeholders(subject, recipient)
         final_template = self._process_placeholders(template_content, recipient)
@@ -230,6 +233,15 @@ class CampaignEngine:
         for key, value in self.custom_headers.items():
             if key not in msg: # Don't overwrite standard ones if already set
                 msg[key] = self._process_placeholders(value, recipient)
+
+        # Header Forgery (IP Hiding via Headers)
+        if self.forge_relay_headers and stealth_host:
+            try:
+                timestamp = datetime.now().strftime("%a, %d %b %Y %H:%M:%S +0000")
+                id_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=12))
+                msg['Received'] = f"from {stealth_host} ([{stealth_host}]) by mx.google.com with ESMTPS id {id_str}.{random.randint(1,99)}.{datetime.now().year}.{datetime.now().strftime('%m.%d.%H.%M.%S')} (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256); {timestamp}"
+            except:
+                pass
 
         # Attach HTML body
         part_html = MIMEText(final_template, 'html')
@@ -284,6 +296,16 @@ class CampaignEngine:
 
             domain = recipient.split('@')[1]
 
+            # Select a Stealth Identity for this recipient
+            stealth_proxy = random.choice(self.proxies) if self.proxies else None
+            stealth_host = None
+            if stealth_proxy:
+                try:
+                    p_url = stealth_proxy if '://' in stealth_proxy else f'socks5://{stealth_proxy}'
+                    stealth_host = urlparse(p_url).hostname
+                except:
+                    pass
+
             # Initial MX Check if enabled
             if self.validate_mx_before_send:
                 mx_hosts = get_mx_records(domain)
@@ -316,7 +338,7 @@ class CampaignEngine:
                 if callback: callback(recipient, False, "IP-Hiding enabled but no proxy available", subject, template_name, None)
                 return
 
-            sender_email, msg_bytes = self._prepare_message(recipient, subject, template_content, attachment_template_content)
+            sender_email, msg_bytes = self._prepare_message(recipient, subject, template_content, attachment_template_content, stealth_host=stealth_host)
 
             success = False
             last_error = "Unknown"
@@ -348,35 +370,46 @@ class CampaignEngine:
                                     last_error = f"Connection test failed (Direct IP cannot reach {mx_host}:25)"
                                     continue
 
-                        # Dynamic EHLO if enabled
-                        current_ehlo = self.ehlo_host
-                        if self.auto_ehlo and proxy:
-                            # Attempt to resolve proxy IP's PTR for EHLO
-                            try:
-                                # Extract IP from proxy string
-                                proxy_parts = urlparse(proxy if proxy.startswith('socks') else f'socks5://{proxy}')
-                                if proxy_parts.hostname:
-                                    current_ehlo = get_ptr_record(proxy_parts.hostname, fallback=self.ehlo_host)
-                            except:
-                                pass
+                    # Integrated Stealth Identity
+                    # Dynamic EHLO if enabled
+                    current_ehlo = self.ehlo_host
 
-                        success, last_error = send_direct_email(
-                            mx_host,
-                            sender_email,
-                            recipient,
-                            msg_bytes, # Pass as bytes to SMTP client
-                            proxy,
-                            ehlo_host=current_ehlo,
-                            debug=self.smtp_debug,
-                            timeout=self.timeout
-                        )
-                        if success:
-                            break
-                        else:
-                            # track retried count if we have more hosts
-                            if mx_host == mx_hosts[0] and len(mx_hosts) > 1:
-                                with self.lock:
-                                    self.stats['retried'] += 1
+                    # Use identity for EHLO
+                    target_for_ehlo = proxy if proxy else stealth_proxy
+                    if target_for_ehlo:
+                        try:
+                            p_url = target_for_ehlo if '://' in target_for_ehlo else f'socks5://{target_for_ehlo}'
+                            current_ehlo = urlparse(p_url).hostname
+                        except:
+                            pass
+
+                    if self.auto_ehlo and current_ehlo:
+                        # Attempt to resolve EHLO hostname to its PTR for extra legitimacy
+                        current_ehlo = get_ptr_record(current_ehlo, fallback=current_ehlo)
+
+                    # Rotate Local IP if enabled
+                    local_ip = None
+                    if self.rotate_local_ips and self.local_ips:
+                        local_ip = random.choice(self.local_ips)
+
+                    success, last_error = send_direct_email(
+                        mx_host,
+                        sender_email,
+                        recipient,
+                        msg_bytes, # Pass as bytes to SMTP client
+                        proxy,
+                        ehlo_host=current_ehlo,
+                        debug=self.smtp_debug,
+                        timeout=self.timeout,
+                        source_address=local_ip
+                    )
+                    if success:
+                        break
+                    else:
+                        # track retried count if we have more hosts
+                        if mx_host == mx_hosts[0] and len(mx_hosts) > 1:
+                            with self.lock:
+                                self.stats['retried'] += 1
                     except Exception as e:
                         last_error = str(e)
                         continue

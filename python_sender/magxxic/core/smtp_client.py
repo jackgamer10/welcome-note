@@ -8,12 +8,13 @@ class SOCKS5SMTP(smtplib.SMTP):
     SMTP client that routes through a SOCKS5 proxy.
     """
     def __init__(self, host='', port=0, local_hostname=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-                 proxy_host=None, proxy_port=None, proxy_user=None, proxy_pass=None):
+                 proxy_host=None, proxy_port=None, proxy_user=None, proxy_pass=None, source_address=None):
         self.proxy_host = proxy_host
         self.proxy_port = proxy_port
         self.proxy_user = proxy_user
         self.proxy_pass = proxy_pass
-        super().__init__(host, port, local_hostname, timeout)
+        self.source_address = source_address
+        super().__init__(host, port, local_hostname, timeout, source_address=source_address)
 
     def _get_socket(self, host, port, timeout):
         if self.proxy_host and self.proxy_port:
@@ -34,9 +35,9 @@ class SOCKS5SMTP(smtplib.SMTP):
         else:
             return socket.create_connection((host, port), timeout)
 
-def send_direct_email(mx_host, sender_email, recipient_email, msg_data, proxy=None, ehlo_host="example.com", debug=False, timeout=15):
+def send_direct_email(mx_host, sender_email, recipient_email, msg_data, proxy=None, ehlo_host="example.com", debug=False, timeout=15, source_address=None):
     """
-    Sends an email directly to an MX host, optionally via a proxy.
+    Sends an email directly to an MX host, optionally via a proxy or specific source IP.
     msg_data can be string or bytes.
     """
     proxy_host = None
@@ -64,7 +65,8 @@ def send_direct_email(mx_host, sender_email, recipient_email, msg_data, proxy=No
         # Use port 25 for direct-to-MX
         with SOCKS5SMTP(host=mx_host, port=25, timeout=timeout,
                         proxy_host=proxy_host, proxy_port=proxy_port,
-                        proxy_user=proxy_user, proxy_pass=proxy_pass) as server:
+                        proxy_user=proxy_user, proxy_pass=proxy_pass,
+                        source_address=(source_address, 0) if source_address else None) as server:
             server.set_debuglevel(1 if debug else 0)
             server.ehlo(ehlo_host)
             # sendmail handles both string and bytes

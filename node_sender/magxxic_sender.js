@@ -90,6 +90,8 @@ async function interactiveDashboard(appConfig) {
             ["Dynamic EHLO", "auto_ehlo", !!appConfig.auto_ehlo],
             ["SMTP Debug Logs", "smtp_debug", !!appConfig.smtp_debug],
             ["Resilient Retries", "resilient_mode", (appConfig.proxy_retries || 0) > 0],
+            ["Rotate Local IPs", "rotate_local_ips", !!appConfig.rotate_local_ips],
+            ["Forge Relay Headers", "forge_relay_headers", !!appConfig.forge_relay_headers],
         ];
 
         options.forEach(([label, key, value], i) => {
@@ -172,6 +174,7 @@ async function main() {
     const subjects = loadList(path.join(baseDir, 'subjects.txt'));
     const recipients = loadList(path.join(baseDir, 'recipients.txt'));
     const rawProxies = loadList(path.join(baseDir, 'proxies.txt'));
+    const localIps = loadList(path.join(baseDir, 'local_ips.txt'));
     const links = loadList(path.join(baseDir, 'links.txt'));
     const templates = loadTemplates(templateDir);
     const attachmentTemplates = loadTemplates(attachmentTemplateDir);
@@ -229,6 +232,7 @@ async function main() {
         attachment_templates: attachmentTemplates,
         recipients,
         proxies,
+        local_ips: localIps,
         links,
         dkim: dkimOptions,
         senders: appConfig.senders || ["info@example.com"],

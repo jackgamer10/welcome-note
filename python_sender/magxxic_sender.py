@@ -101,6 +101,8 @@ def interactive_dashboard(app_config):
             ("Dynamic EHLO", "auto_ehlo", app_config.get('auto_ehlo', False)),
             ("SMTP Debug Logs", "smtp_debug", app_config.get('smtp_debug', False)),
             ("Resilient Retries", "resilient_mode", app_config.get('proxy_retries', 0) > 0),
+            ("Rotate Local IPs", "rotate_local_ips", app_config.get('rotate_local_ips', False)),
+            ("Forge Relay Headers", "forge_relay_headers", app_config.get('forge_relay_headers', False)),
         ]
 
         for i, (label, key, value) in enumerate(options, 1):
@@ -189,6 +191,7 @@ def main():
         subjects = load_list(os.path.join(base_dir, 'subjects.txt'))
         recipients = load_list(os.path.join(base_dir, 'recipients.txt'))
         raw_proxies = load_list(os.path.join(base_dir, 'proxies.txt'))
+        local_ips = load_list(os.path.join(base_dir, 'local_ips.txt'))
         links = load_list(os.path.join(base_dir, 'links.txt'))
 
         if not recipients:
@@ -292,6 +295,7 @@ def main():
             'attachment_templates': attachment_templates,
             'recipients': recipients,
             'proxies': proxies,
+            'local_ips': local_ips,
             'links': links,
             'senders': app_config.get('senders', ["info@example.com"]),
             'dkim': dkim_config,

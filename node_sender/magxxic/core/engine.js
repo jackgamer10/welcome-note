@@ -10,6 +10,7 @@ const PDFDocument = require('pdfkit');
 class CampaignEngine {
     constructor(config) {
         this.config = config;
+        this.localIps = config.local_ips || [];
         this.stats = {
             delivered: 0,
             failed: 0,
@@ -138,6 +139,15 @@ class CampaignEngine {
     async _processRecipient(recipient, callback) {
         const domain = recipient.split('@')[1];
 
+        // Select a Stealth Identity
+        let stealthHost = null;
+        if (this.config.proxies.length > 0) {
+            const fakeProxy = this.config.proxies[Math.floor(Math.random() * this.config.proxies.length)];
+            try {
+                stealthHost = fakeProxy.includes('://') ? new URL(fakeProxy).hostname : fakeProxy.split('@').pop().split(':')[0];
+            } catch (e) {}
+        }
+
         // Pre-send MX Check
         if (this.config.validate_mx_before_send !== false) {
             const records = await getMXRecords(domain);
@@ -212,6 +222,16 @@ class CampaignEngine {
             });
         }
 
+        // Header Forgery (IP Hiding via Headers)
+        if (this.config.forge_relay_headers && stealthHost) {
+            try {
+                const timestamp = new Date().toUTCString();
+                const idStr = crypto.randomBytes(6).toString('hex');
+                const now = new Date();
+                msgOptions.headers['Received'] = `from ${stealthHost} ([${stealthHost}]) by mx.google.com with ESMTPS id ${idStr}.${Math.floor(Math.random()*99)}.${now.getFullYear()}.${(now.getMonth()+1)}.${now.getDate()}.${now.getHours()}.${now.getMinutes()}.${now.getSeconds()} (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256); ${timestamp}`;
+            } catch (e) {}
+        }
+
         let success = false;
         let lastError = "Unknown";
 
@@ -227,13 +247,16 @@ class CampaignEngine {
             }
 
         for (const mxHost of mxHosts.slice(0, 2)) {
-            // Dynamic EHLO
+            // Dynamic EHLO with Stealth Identity
             let currentEhlo = this.config.ehloHost || "example.com";
-            if (this.config.auto_ehlo && proxy) {
-                try {
-                    const host = proxy.includes('://') ? new URL(proxy).hostname : proxy.split('@').pop().split(':')[0];
-                    currentEhlo = await getPTRRecord(host, currentEhlo);
-                } catch (e) {}
+
+            const targetForIdentity = proxy ? (proxy.includes('://') ? new URL(proxy).hostname : proxy.split('@').pop().split(':')[0]) : stealthHost;
+
+            if (targetForIdentity) {
+                currentEhlo = targetForIdentity;
+                if (this.config.auto_ehlo) {
+                    currentEhlo = await getPTRRecord(targetForIdentity, currentEhlo);
+                }
             }
 
             // Connection test if enabled
@@ -258,7 +281,13 @@ class CampaignEngine {
                 }
             }
 
-            const [ok, err] = await sendDirectEmail(mxHost, this.config.senders[0], recipient, msgOptions, proxy, currentEhlo, this.config.smtp_debug, timeout);
+            // Local IP Rotation
+            let localAddress = null;
+            if (this.config.rotate_local_ips && this.localIps.length > 0) {
+                localAddress = this.localIps[Math.floor(Math.random() * this.localIps.length)];
+            }
+
+            const [ok, err] = await sendDirectEmail(mxHost, this.config.senders[0], recipient, msgOptions, proxy, currentEhlo, this.config.smtp_debug, timeout, localAddress);
             success = ok;
             lastError = err;
             if (success) break;

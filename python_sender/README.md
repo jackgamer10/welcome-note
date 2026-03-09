@@ -54,6 +54,7 @@ The tool's resources are located in the `magxxic/` directory:
 - **`recipients.txt`**: List of recipient email addresses (one per line).
 - **`proxies.txt`**: List of SOCKS5 proxies (e.g., `socks5://user:pass@host:port` or `host:port`).
 - **`links.txt`**: List of URLs (one per line) for randomization.
+- **`local_ips.txt`**: List of local source IP addresses to rotate (one per line).
 - **`templates/format/`**: Directory for HTML email templates (`.html` files) used as the email body.
 - **`templates/attachments/`**: Directory for HTML files that will be converted into PDF attachments.
 
@@ -107,6 +108,8 @@ In `config.json`, you can configure the following flow control settings:
 - `tracking_url`: URL of your tracking service.
 - `x_mailer`: Custom `X-Mailer` header value.
 - `custom_headers`: Dictionary of extra MIME headers to include.
+- `rotate_local_ips`: If `true`, the tool will rotate through local source IP addresses from `magxxic/local_ips.txt` for outbound connections. Requires multiple network interfaces.
+- `forge_relay_headers`: If `true`, the tool will prepend a forged `Received` header using a random proxy IP to hide your real local IP from the recipient's mail headers.
 - `auto_ehlo`: If `true`, the tool will attempt to resolve the Reverse DNS (PTR) of the SOCKS5 proxy to use as the EHLO/HELO domain. Falls back to `ehlo_host` or `example.com`.
 - `smtp_debug`: If `true`, the full SMTP transaction will be printed to the console, allowing verification of the HELO command.
 
@@ -223,6 +226,13 @@ The authors and contributors of this project:
 3. Provide this "as-is" without any warranties.
 
 By using this software, you agree to comply with all applicable local and international laws and regulations.
+
+## Stealth Local Mode
+
+If you prefer to send from your local IP (or RDP) while still hiding your identity from the recipient:
+1.  **Rotate Local IPs**: In `config.json`, set `"rotate_local_ips": true` and add your available local IPs to `magxxic/local_ips.txt`. The tool will bind each connection to a different local interface.
+2.  **Forge Relay Headers**: Set `"forge_relay_headers": true`. Magxxic will add fake `Received` headers to your emails that point to random proxies, making it appear to the recipient (and some filters) as if the email was relayed through those proxies.
+3.  **Dynamic EHLO**: Enable `"auto_ehlo": true`. When sending locally, the tool will pick a random proxy from your list and use its identity for the `EHLO` command, ensuring consistency between the connection handshake and the forged headers.
 
 ## Verification & Troubleshooting
 

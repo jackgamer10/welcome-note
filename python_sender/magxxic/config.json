@@ -16,6 +16,8 @@
     "batch_pause_seconds": 30,
     "timeout": 20,
     "proxy_retries": 3,
+    "rotate_local_ips": false,
+    "forge_relay_headers": false,
     "attach_pdf": false,
     "attachment_probability": 100,
     "pdf_filename_format": "Document_[[RANDOM_STR:6]].pdf",

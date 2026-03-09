@@ -103,6 +103,7 @@ def interactive_dashboard(app_config):
             ("Resilient Retries", "resilient_mode", app_config.get('proxy_retries', 0) > 0),
             ("Rotate Local IPs", "rotate_local_ips", app_config.get('rotate_local_ips', False)),
             ("Forge Relay Headers", "forge_relay_headers", app_config.get('forge_relay_headers', False)),
+            ("Stealth Local Mode", "stealth_local_mode", not app_config.get('hide_ip', True) and app_config.get('forge_relay_headers', False) and app_config.get('auto_ehlo', False)),
         ]
 
         for i, (label, key, value) in enumerate(options, 1):
@@ -128,6 +129,12 @@ def interactive_dashboard(app_config):
                     # Special handling for proxy_retries toggle
                     current = app_config.get('proxy_retries', 0)
                     app_config['proxy_retries'] = 3 if current == 0 else 0
+                elif key == "stealth_local_mode":
+                    # Convenience toggle for Local RDP sending with fake identity
+                    is_on = options[idx][2]
+                    app_config['hide_ip'] = is_on
+                    app_config['forge_relay_headers'] = not is_on
+                    app_config['auto_ehlo'] = not is_on
                 else:
                     app_config[key] = not app_config.get(key, options[idx][2])
         else:

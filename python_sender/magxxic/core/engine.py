@@ -18,6 +18,7 @@ from magxxic.core.resolver import get_mx_records, get_ptr_record
 from magxxic.core.smtp_client import send_direct_email
 from magxxic.core.signer import sign_message
 from magxxic.core.proxy_validator import check_proxy
+from urllib.parse import urlparse
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -239,7 +240,10 @@ class CampaignEngine:
             try:
                 timestamp = datetime.now().strftime("%a, %d %b %Y %H:%M:%S +0000")
                 id_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=12))
-                msg['Received'] = f"from {stealth_host} ([{stealth_host}]) by mx.google.com with ESMTPS id {id_str}.{random.randint(1,99)}.{datetime.now().year}.{datetime.now().strftime('%m.%d.%H.%M.%S')} (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256); {timestamp}"
+                # Add multiple relay hops for realism
+                hop1 = f"from {stealth_host} ([{stealth_host}]) by mta-proxy.magxxic.local with ESMTPS id {id_str}.{random.randint(1,9)} (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384); {timestamp}"
+                hop2 = f"from mta-proxy.magxxic.local (mta-proxy.magxxic.local [127.0.0.1]) by mx.google.com with ESMTPS id {id_str}.{random.randint(10,99)}.{datetime.now().year}.{datetime.now().strftime('%m.%d.%H.%M.%S')} (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256); {timestamp}"
+                msg['Received'] = f"{hop1}\r\n\t{hop2}"
             except:
                 pass
 

@@ -92,6 +92,7 @@ async function interactiveDashboard(appConfig) {
             ["Resilient Retries", "resilient_mode", (appConfig.proxy_retries || 0) > 0],
             ["Rotate Local IPs", "rotate_local_ips", !!appConfig.rotate_local_ips],
             ["Forge Relay Headers", "forge_relay_headers", !!appConfig.forge_relay_headers],
+            ["Stealth Local Mode", "stealth_local_mode", appConfig.hide_ip === false && !!appConfig.forge_relay_headers && !!appConfig.auto_ehlo],
         ];
 
         options.forEach(([label, key, value], i) => {
@@ -117,6 +118,11 @@ async function interactiveDashboard(appConfig) {
                 const key = options[idx][1];
                 if (key === "resilient_mode") {
                     appConfig.proxy_retries = options[idx][2] ? 0 : 3;
+                } else if (key === "stealth_local_mode") {
+                    const isOn = options[idx][2];
+                    appConfig.hide_ip = isOn;
+                    appConfig.forge_relay_headers = !isOn;
+                    appConfig.auto_ehlo = !isOn;
                 } else {
                     appConfig[key] = !options[idx][2];
                 }

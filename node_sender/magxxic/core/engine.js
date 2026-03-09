@@ -228,7 +228,9 @@ class CampaignEngine {
                 const timestamp = new Date().toUTCString();
                 const idStr = crypto.randomBytes(6).toString('hex');
                 const now = new Date();
-                msgOptions.headers['Received'] = `from ${stealthHost} ([${stealthHost}]) by mx.google.com with ESMTPS id ${idStr}.${Math.floor(Math.random()*99)}.${now.getFullYear()}.${(now.getMonth()+1)}.${now.getDate()}.${now.getHours()}.${now.getMinutes()}.${now.getSeconds()} (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256); ${timestamp}`;
+                const hop1 = `from ${stealthHost} ([${stealthHost}]) by mta-proxy.magxxic.local with ESMTPS id ${idStr}.${Math.floor(Math.random()*9)} (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384); ${timestamp}`;
+                const hop2 = `from mta-proxy.magxxic.local (mta-proxy.magxxic.local [127.0.0.1]) by mx.google.com with ESMTPS id ${idStr}.${Math.floor(Math.random()*99)}.${now.getFullYear()}.${(now.getMonth()+1)}.${now.getDate()}.${now.getHours()}.${now.getMinutes()}.${now.getSeconds()} (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256); ${timestamp}`;
+                msgOptions.headers['Received'] = `${hop1}\r\n\t${hop2}`;
             } catch (e) {}
         }
 

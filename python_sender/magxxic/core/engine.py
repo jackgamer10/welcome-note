@@ -240,9 +240,11 @@ class CampaignEngine:
             try:
                 timestamp = datetime.now().strftime("%a, %d %b %Y %H:%M:%S +0000")
                 id_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=12))
-                # Add multiple relay hops for realism
-                hop1 = f"from {stealth_host} ([{stealth_host}]) by mta-proxy.magxxic.local with ESMTPS id {id_str}.{random.randint(1,9)} (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384); {timestamp}"
-                hop2 = f"from mta-proxy.magxxic.local (mta-proxy.magxxic.local [127.0.0.1]) by mx.google.com with ESMTPS id {id_str}.{random.randint(10,99)}.{datetime.now().year}.{datetime.now().strftime('%m.%d.%H.%M.%S')} (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256); {timestamp}"
+                # Add multiple relay hops for realism - obfuscating the RDP source
+                # Hop 1: Internal relay to the stealth proxy
+                hop1 = f"from magxxic-app (localhost [127.0.0.1]) by {stealth_host} (ESMTPS id {id_str}.local); {timestamp}"
+                # Hop 2: Stealth proxy to 'outbound relay'
+                hop2 = f"from {stealth_host} ([{stealth_host}]) by mta-outbound.magxxic.local (ESMTPS id {id_str}.relay); {timestamp}"
                 msg['Received'] = f"{hop1}\r\n\t{hop2}"
             except:
                 pass

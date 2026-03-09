@@ -155,6 +155,13 @@ If you prefer to send from your local IP (or RDP) while still hiding your identi
 2.  **Forge Relay Headers**: Set `"forge_relay_headers": true`. Magxxic will add fake `Received` headers to your emails that point to random proxies, making it appear to the recipient (and some filters) as if the email was relayed through those proxies.
 3.  **Dynamic EHLO**: Enable `"auto_ehlo": true`. When sending locally, the tool will pick a random proxy from your list and use its identity for the `EHLO` command, ensuring consistency between the connection handshake and the forged headers.
 
+### Stealth RDP Configuration
+
+If you are using an RDP server with **Port 25 open**, you can achieve maximum performance while staying hidden:
+-   **Step 1**: Load your proxy list into `magxxic/proxies.txt`. These don't need port 25 open, as they are only used for their **identity**.
+-   **Step 2**: Toggle **Stealth Local Mode** to **[ON]** in the dashboard.
+-   **Step 3**: Magxxic will now use your fast RDP connection to send mail directly, but it will use your proxy IPs for the `EHLO` hostname and the `Received` headers. The recipient's mail server will see a connection from your RDP IP, but the *email metadata* will point to the proxy, providing a layer of obfuscation.
+
 ## Verification & Troubleshooting
 
 ### Verifying HELO/EHLO

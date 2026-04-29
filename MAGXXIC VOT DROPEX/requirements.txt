@@ -1,0 +1,4 @@
+playwright
+pypdf
+rich
+img2pdf

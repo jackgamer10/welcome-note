@@ -4,6 +4,8 @@ const chalk = require('chalk');
 const { CampaignEngine } = require('./magxxic/core/engine');
 const { validateProxies } = require('./magxxic/core/proxy_validator');
 const { decryptProxies } = require('./magxxic/core/proxy_loader');
+const { updateDkimKey } = require('./magxxic/core/update_dkim');
+const readline = require('readline');
 
 function printBanner() {
     console.log(chalk.cyan(`
@@ -46,6 +48,31 @@ async function main() {
     const configPath = path.join(__dirname, 'magxxic/config.json');
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
+    printStatusTable(config);
+
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    const choice = await new Promise(resolve => {
+        console.log(chalk.bold.white("\n  [ OPTIONS ]"));
+        console.log("  1. START CAMPAIGN");
+        console.log("  2. UPDATE DKIM PRIVATE KEY");
+        console.log("  Q. QUIT");
+        rl.question(chalk.cyan("\nSelect an option: "), resolve);
+    });
+
+    if (choice === '2') {
+        rl.close();
+        await updateDkimKey();
+        console.log(chalk.yellow("\nPlease restart the application to apply changes."));
+        process.exit(0);
+    } else if (choice.toLowerCase() === 'q') {
+        process.exit(0);
+    }
+    rl.close();
+
     const dataDir = path.join(__dirname, 'data');
     const load = (f) => fs.existsSync(path.join(dataDir, f)) ? fs.readFileSync(path.join(dataDir, f), 'utf8').split('\n').filter(l => l.trim()) : [];
 
@@ -75,8 +102,6 @@ async function main() {
 
     const attTemplatesDir = path.join(__dirname, 'templates/attachments');
     const attachmentTemplates = fs.existsSync(attTemplatesDir) ? fs.readdirSync(attTemplatesDir).map(f => [f, fs.readFileSync(path.join(attTemplatesDir, f), 'utf8')]) : [];
-
-    printStatusTable(config);
 
     const engine = new CampaignEngine(config, {
         recipients, proxies, senders, subjects, links, templates, attachmentTemplates

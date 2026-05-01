@@ -1,5 +1,0 @@
-https://example.com/portal/login
-https://secure-verify.net/account
-https://auth-gateway.org/verify
-https://service-update.io/confirm
-https://account-security.biz/check

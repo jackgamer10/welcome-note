@@ -1,5 +1,0 @@
-# Add your local IP addresses here, one per line.
-# Magxxic will rotate these as the source address for outbound connections.
-# Example:
-# 192.168.1.10
-# 192.168.1.11

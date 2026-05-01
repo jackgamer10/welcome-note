@@ -309,6 +309,9 @@
    [[DOMAIN_FAVICON]]               Favicon URL for recipient domain
                                     → https://gmail.com/favicon.ico
 
+   [[CID:filename]]                 Inline image reference (requires file in imagecid/)
+                                    → [[CID:logo.png]] → cid:logo.png
+
 
 ================================================================================
    7. REFERENCE & TRACKING IDs (perfect for subjects & letters)

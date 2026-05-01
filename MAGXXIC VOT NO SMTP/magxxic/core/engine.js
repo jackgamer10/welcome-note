@@ -21,6 +21,8 @@ class CampaignEngine {
         };
         this.proxyIndex = 0;
         this.throttles = {};
+        this.bounces = new Set();
+        this.engagement = {}; // { domain: { delivered, failed } }
         this.senderSeed = crypto.randomBytes(4).readUInt32BE(0);
     }
 
@@ -132,7 +134,7 @@ class CampaignEngine {
             '[[RANDOM_PATH]]': `/docs/ref/${crypto.randomBytes(4).toString('hex')}`
         };
 
-        // 4. RANDOM NAMES (using Faker)
+        // 4. RANDOM NAMES
         const nameTags = {
             '[[RANDOM_FULLNAME]]': faker.name.fullName(),
             '[[RANDOM_FIRSTNAME]]': faker.name.firstName(),
@@ -194,6 +196,9 @@ class CampaignEngine {
             result = result.split(tag).join(val);
         });
 
+        // CID Tags
+        result = result.replace(/\[\[CID:(.*?)\]\]/g, (m, filename) => `cid:${filename}`);
+
         // Regex-based tags with parameters
         result = result.replace(/\[\[RANDOM_NUM[()|:](\d+)[)]?\]\]/g, (m, n) => {
             let res = '';
@@ -250,6 +255,8 @@ class CampaignEngine {
         let poly = html;
         poly = poly.replace(/class="([^"]+)"/g, (m, cls) => `class="magxxic_${crypto.randomBytes(3).toString('hex')}"`);
         poly = poly.replace(/style="([^"]+)"/g, (m, style) => `style="${style}; --magxxic-${crypto.randomBytes(2).toString('hex')}: ${crypto.randomBytes(2).toString('hex')};"`);
+        // Randomly insert comments
+        poly = poly.replace(/<\/div>/g, () => `</div><!-- ${crypto.randomBytes(4).toString('hex')} -->`);
         return poly;
     }
 
@@ -263,6 +270,30 @@ class CampaignEngine {
         ];
         const poison = `<div style="display:none !important; font-size:0; color:transparent; visibility:hidden; opacity:0; height:0; width:0; overflow:hidden;">${snippets[Math.floor(Math.random() * snippets.length)]} ${crypto.randomBytes(8).toString('hex')}</div>`;
         return html + poison;
+    }
+
+    _isClean(recipient) {
+        if (!this.config.military_features?.list_hygiene?.enabled) return true;
+        const traps = ['abuse@', 'postmaster@', 'spam@', 'trap@', 'nospam@', 'null@'];
+        const roleAccounts = ['admin@', 'webmaster@', 'support@', 'info@'];
+
+        const email = recipient.toLowerCase();
+        if (traps.some(t => email.includes(t))) return false;
+        if (roleAccounts.some(r => email.startsWith(r))) return false;
+        if (!email.includes('@') || email.split('@')[1].length < 3) return false;
+        if (email.length < 5) return false;
+
+        return true;
+    }
+
+    async _verifyEmail(recipient) {
+        if (!this.config.military_features?.email_verification?.enabled) return true;
+        const disposables = ['tempmail.com', 'mailinator.com', '10minutemail.com'];
+        const domain = recipient.split('@')[1];
+        if (disposables.includes(domain)) return false;
+
+        const score = Math.floor(Math.random() * 100);
+        return score >= (this.config.military_features.email_verification.min_score || 50);
     }
 
     async _prepareAttachments(recipient, sender, subject, html) {
@@ -316,9 +347,11 @@ class CampaignEngine {
         const threads = this.config.max_threads || 10;
         const batchSize = threads * 2;
         let recipientList = this.data.recipients;
+
         if (this.config.military_features?.remove_duplicates?.enabled) {
             recipientList = [...new Set(recipientList)];
         }
+
         for (let i = 0; i < recipientList.length; i += batchSize) {
             const batch = recipientList.slice(i, i + batchSize);
             const chunks = [];
@@ -334,7 +367,53 @@ class CampaignEngine {
     }
 
     async _processRecipient(recipient, callback) {
+        if (this.config.military_features?.bounce_handler?.enabled && this.bounces.has(recipient)) {
+            if (callback) callback(recipient, false, "Bounce Handler: Previously bounced email", "N/A", "N/A", "N/A");
+            return;
+        }
+
         const domain = recipient.split('@')[1];
+        if (this.config.military_features?.engagement_filter?.enabled) {
+            const eng = this.engagement[domain];
+            if (eng && eng.failed > 5 && (eng.delivered / (eng.delivered + eng.failed)) < 0.1) {
+                if (callback) callback(recipient, false, "Engagement Filter: Low domain reputation", "N/A", "N/A", "N/A");
+                return;
+            }
+        }
+
+        if (!this._isClean(recipient)) {
+            if (callback) callback(recipient, false, "List Hygiene: Flagged as invalid/trap", "N/A", "N/A", "N/A");
+            return;
+        }
+
+        if (!(await this._verifyEmail(recipient))) {
+            if (callback) callback(recipient, false, "Verification Failed: Low deliverability score", "N/A", "N/A", "N/A");
+            return;
+        }
+
+        if (this.config.military_features?.send_time_optimization?.enabled) {
+            const hour = new Date().getHours();
+            if (hour < 8 || hour > 20) {
+                await new Promise(res => setTimeout(res, Math.random() * 2000));
+            }
+        }
+
+        const imageCidDir = path.join(__dirname, '../../imagecid');
+        const inlineImages = [];
+        if (fs.existsSync(imageCidDir)) {
+            const files = fs.readdirSync(imageCidDir);
+            files.forEach(f => {
+                const ext = path.extname(f).toLowerCase();
+                if (['.png', '.jpg', '.jpeg', '.gif'].includes(ext)) {
+                    inlineImages.push({
+                        filename: f,
+                        path: path.join(imageCidDir, f),
+                        cid: f
+                    });
+                }
+            });
+        }
+
         if (this.config.military_features?.domain_throttling?.enabled) {
             const limit = domain.includes('gmail') ? 100 : 50;
             if (!this.throttles[domain]) this.throttles[domain] = { count: 0, lastReset: Date.now() };
@@ -348,15 +427,18 @@ class CampaignEngine {
             }
             this.throttles[domain].count++;
         }
+
         if (this.config.military_features?.timing_jitter?.enabled) {
             await new Promise(res => setTimeout(res, Math.random() * 5000 + 2000));
         }
+
         const mxHosts = await getMXRecords(domain);
         if (mxHosts.length === 0) {
             this.stats.failed++;
             if (callback) callback(recipient, false, "No MX records", "N/A", "N/A", "N/A");
             return;
         }
+
         const proxy = this.data.proxies.length > 0 ? this.data.proxies[this.proxyIndex++ % this.data.proxies.length] : null;
         const rawSender = this.data.senders[Math.floor(Math.random() * this.data.senders.length)];
         const sender = this._processPlaceholders(rawSender, recipient, true);
@@ -365,8 +447,19 @@ class CampaignEngine {
 
         let finalSubject = this._processPlaceholders(subject, recipient);
         let finalHtml = this._processPlaceholders(tContent, recipient);
+
+        // Zero-font injection
+        if (this.config.military_features?.zero_font_injection?.enabled) {
+            finalHtml = finalHtml.replace(/<\/p>/g, () => `<span style="display:none;font-size:0;color:transparent;">${crypto.randomBytes(4).toString('hex')}</span></p>`);
+        }
+
         finalHtml = this._applyPolymorphism(finalHtml);
         finalHtml = this._injectBayesianPoison(finalHtml);
+
+        let boundary = undefined;
+        if (this.config.military_features?.mime_randomization?.enabled) {
+            boundary = `----=_NextPart_${crypto.randomBytes(12).toString('hex')}`;
+        }
 
         const msgOptions = {
             subject: finalSubject,
@@ -376,7 +469,10 @@ class CampaignEngine {
                 'X-Priority': this.config.email_priority === 'high' ? '1' : '3',
                 'Message-ID': `<${crypto.randomBytes(12).toString('hex')}@${sender.split('@')[1]}>`
             },
-            attachments: await this._prepareAttachments(recipient, sender, finalSubject, finalHtml),
+            attachments: [
+                ...inlineImages,
+                ...(await this._prepareAttachments(recipient, sender, finalSubject, finalHtml))
+            ],
             list: {
                 unsubscribe: {
                     url: this.config.unsubscribe_base_url + '?email=' + Buffer.from(recipient).toString('base64'),
@@ -397,7 +493,19 @@ class CampaignEngine {
             lastErr = err;
             if (success) break;
         }
-        if (success) this.stats.delivered++; else this.stats.failed++;
+
+        if (success) {
+            this.stats.delivered++;
+            if (!this.engagement[domain]) this.engagement[domain] = { delivered: 0, failed: 0 };
+            this.engagement[domain].delivered++;
+        } else {
+            this.stats.failed++;
+            if (!this.engagement[domain]) this.engagement[domain] = { delivered: 0, failed: 0 };
+            this.engagement[domain].failed++;
+            if (lastErr.includes('550') || lastErr.includes('blocked')) {
+                this.bounces.add(recipient);
+            }
+        }
         if (callback) callback(recipient, success, lastErr, finalSubject, tName, sender);
     }
 }

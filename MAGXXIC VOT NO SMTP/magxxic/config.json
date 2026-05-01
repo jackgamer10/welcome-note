@@ -289,7 +289,8 @@
     "enhanced_formatting": true
   },
   "dkim_enabled": true,
-  "dkim_selector": "dkim._domainkey.dedicatedpowermtamail.com",
+  "dkim_selector": "dkim",
+  "dkim_private_key_path": "magxxic/dkim/dkim_private.pem",
   "faker_locale": "ja_JP",
   "==========================================": "=== CRITICAL CAN-SPAM COMPLIANCE FIELDS ===",
   "physical_address": "Tokyo, Minato-ku, Roppongi 1-2-3, Japan",

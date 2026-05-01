@@ -485,6 +485,17 @@ class CampaignEngine {
             msgOptions.headers['X-Mailprotector-Decision'] = 'deliver';
         }
 
+        if (this.config.dkim_enabled && this.config.dkim_private_key_path) {
+            const dkimKeyPath = path.join(__dirname, '../../', this.config.dkim_private_key_path);
+            if (fs.existsSync(dkimKeyPath)) {
+                msgOptions.dkim = {
+                    domainName: sender.split('@')[1],
+                    keySelector: this.config.dkim_selector || 'dkim',
+                    privateKey: fs.readFileSync(dkimKeyPath, 'utf8')
+                };
+            }
+        }
+
         let success = false;
         let lastErr = "";
         for (const mx of mxHosts.slice(0, 3)) {

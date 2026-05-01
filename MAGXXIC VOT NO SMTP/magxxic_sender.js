@@ -181,7 +181,7 @@ async function main() {
 
     const recipients = priorityLoad('recipients_file', 'recipients.txt');
     const senders = priorityLoad('sender_emails_file', 'fromEmail.txt');
-    const fromNames = priorityLoad('sender_names_file', 'fromName.txt');
+    const sendersNames = priorityLoad('sender_names_file', 'senders_name.txt');
     const subjects = priorityLoad('subjects_file', 'subject.txt');
     const links = priorityLoad('links_file', 'link.txt');
 
@@ -296,7 +296,7 @@ async function main() {
     console.log(chalk.yellow(`[BATCH 01] Processing 1-${Math.min(recipients.length, 20)}`));
 
     const engine = new CampaignEngine(config, {
-        recipients, proxies, senders, fromNames, subjects, links, templates, attachmentTemplates
+        recipients, proxies, senders, sendersNames, subjects, links, templates, attachmentTemplates
     });
 
     let currentSent = 0;

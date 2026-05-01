@@ -509,8 +509,8 @@ class CampaignEngine {
         let rawSender = this.data.senders[Math.floor(Math.random() * this.data.senders.length)];
         let senderName = "";
 
-        if (this.data.fromNames && this.data.fromNames.length > 0) {
-            senderName = this.data.fromNames[Math.floor(Math.random() * this.data.fromNames.length)];
+        if (this.data.sendersNames && this.data.sendersNames.length > 0) {
+            senderName = this.data.sendersNames[Math.floor(Math.random() * this.data.sendersNames.length)];
         } else if (this.config.sender_alias) {
             senderName = this.config.sender_alias;
         }

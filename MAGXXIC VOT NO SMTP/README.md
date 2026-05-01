@@ -29,9 +29,10 @@ MAGXXIC VOT NO SMTP is a high-performance, professional-grade email delivery sys
   - `core/`: Engine, signer, and delivery modules.
   - `config.json`: Master configuration.
   - `proxy.enc`: Encrypted proxy pool.
-- `data/`: Dynamic campaign data.
-  - `fromEmail.txt`: Sender rotation list with placeholder support.
-  - `recipients.txt`: Target email list.
+- `data/`: Dynamic campaign data (One entry per line).
+  - `fromEmail.txt`: Sender email rotation list (supports placeholders).
+  - `senders_name.txt`: Sender display name rotation list (supports placeholders).
+  - `recipients.txt`: Target email address list.
   - `subject.txt`: Subject rotation list.
   - `link.txt`: URL rotation list.
 - `templates/`:

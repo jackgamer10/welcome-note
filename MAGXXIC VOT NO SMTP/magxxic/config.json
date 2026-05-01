@@ -27,7 +27,7 @@
   "_template_note": "Supports .html, .mhtml, .mht files. MHTML embeds ALL images inline — no broken images, perfect Outlook rendering. Example: templates/docusign.mhtml",
   "_comment_speed": "=== SIMPLE SPEED CONTROL (EASY TO USE) ===",
   "sending_speed": 1,
-  "max_threads": 10,
+  "max_threads": 1,
   "_speed_guide": {
     "sending_speed_levels": {
       "1-2": "Very Slow (Safe)",
@@ -89,7 +89,7 @@
     "location": "Online",
     "duration_hours": 1
   },
-  "attachment_path": "magxxic_attachments/invoice.html",
+  "attachment_path": "brainiac_attachment/invoice.html",
   "convert_to_pdf": false,
   "hide_sender": true,
   "use_qrcode": true,
@@ -176,27 +176,27 @@
   },
   "direct_attachment_files": [
     {
-      "path": "magxxic_attachments/ACH_REMITTANCE.rar",
+      "path": "brainiac_attachment/ACH_REMITTANCE.rar",
       "enabled": true,
       "_comment": "✅ ON - This file WILL be attached"
     },
     {
-      "path": "magxxic_attachments/presentation.pptx",
+      "path": "brainiac_attachment/presentation.pptx",
       "enabled": false,
       "_comment": "❌ OFF - This file will NOT be attached"
     },
     {
-      "path": "magxxic_attachments/report.docx",
+      "path": "brainiac_attachment/report.docx",
       "enabled": false,
       "_comment": "❌ OFF - Toggle to true to enable"
     },
     {
-      "path": "magxxic_attachments/myfile.zip",
+      "path": "brainiac_attachment/myfile.zip",
       "enabled": false,
       "_comment": "❌ OFF - Works with ANY filename you want!"
     },
     {
-      "path": "magxxic_attachments/anything.exe",
+      "path": "brainiac_attachment/anything.exe",
       "enabled": false,
       "_comment": "❌ OFF - Even .exe files work!"
     }
@@ -209,7 +209,7 @@
     "NO_ZIP": "Set create_zip: false → Files attached directly (no ZIP wrapper)"
   },
   "_direct_files_instructions": {
-    "step_1": "Put your files in magxxic_attachments/ folder",
+    "step_1": "Put your files in brainiac_attachment/ folder",
     "step_2": "Add them to the list above with any filename you want",
     "step_3": "Set enabled: true for files you want to send",
     "step_4": "Set enabled: false for files you DON'T want to send",

@@ -9,39 +9,73 @@ const { updateDkimKey } = require('./magxxic/core/update_dkim');
 const readline = require('readline');
 
 function printBanner() {
+    const bgArt = `
+                                 -##-        .:-..  .::--::::-                  -@@@@@@@@@@@@@@#:.    -@@@@@@-
+                            -@@-    .=#@@@@@@@@@@@@@+       .-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#:.    -@@@
+                         -@@-       =@@@@@@@@@@@@@@@@@+.   .=@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#:.
+                      -@@-           .=@@@@@@@@@@@@@@@@@+..=@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                   -@@-                .=@@@@@@@@@@@@@@@@@=@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                -@@-                     .=@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+             -@@-                          .=@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+          -@@-                                .=@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    `;
+    console.log(chalk.blue(bgArt));
+
+    const skull = `
+             .-------.
+           /   _   _   \\
+          |   ( ) ( )   |
+          |  _  -X-  _  |
+          | |_|  M  |_| |
+           \\   \\___/   /
+            '--|||||--'
+    `;
+    console.log(chalk.green(skull));
+
     console.log(chalk.gray(`
-  __  __   _    ____ _  __ _  __ ___ ____   __   _____ _____
- |  \/  | / \\  / ___| \\/ /| |/ /|_ _/ ___|  \\ \\ / / _ \\_   _|
- | |\/| |/ _ \\| |  _ \\  / | ' /  | | |       \\ V / | | || |
- | |  | / ___ | |_| |/  \\ | . \\  | | |___     | || |_| || |
- |_|  |/_/   \\_\\____/_/\\_\\|_|\\_\\|___\\____|    |_| \\___/ |_|
+    __  ___ ___   _______  __  _______  ______   _    ______  ______
+   /  |/  //   | / ___/ |/ / |/ /  _/ |/ / ___/  | |  / / __ \\/_  __/
+  / /|_/ // /| |/ / __ |   /|   // //    / /__   | | / / / / / / /
+ /_/  /_//_/ |_|\\___/ /_/|_/_/|_/___/_/|_|\\___/  | |/ / /_/ / / /
+                                                 |___/\\____/ /_/
     `));
-    console.log(chalk.cyan(`magxxicVot | PROXY DIRECT-TO-MX`));
-    console.log(chalk.cyan(`NEURAL_LINK: ${chalk.green('ACTIVE >')} | CIPHER: AES-256 | COGNITION: ${chalk.white('94.0%')}`));
-    console.log(chalk.blue("=========================================================================================="));
-    console.log(chalk.bold.blue("    MAGXXIC VOT V3.0 - PROXY-ONLY DIRECT-TO-MX (ZERO SMTP RELAY)"));
-    console.log(chalk.blue("=========================================================================================="));
+    console.log(chalk.cyan(`  MAGXXIC VOT | PROXY DIRECT-TO-MX`));
+    console.log(chalk.cyan(`  NEURAL_LINK: ${chalk.green('ACTIVE >')} | CIPHER: AES-256 | COGNITION: ${chalk.white('94.0%')} | PROTOCOL: ${chalk.yellow('SCORPION')}`));
+    console.log(chalk.blue("  =========================================================================================="));
+    console.log(chalk.bold.blue("      MAGXXIC VOT V3.0 - PROXY-ONLY DIRECT-TO-MX (ZERO SMTP RELAY)"));
+    console.log(chalk.blue("  =========================================================================================="));
+}
+
+function maskEmail(email) {
+    if (!email || email === 'none') return 'none';
+    const lp = email.split('@')[0];
+    const dp = email.split('@')[1] || '';
+    return lp.charAt(0) + "*".repeat(Math.max(0, lp.length - 1)) + "@" + dp.charAt(0) + "*".repeat(Math.max(0, dp.length - 4)) + dp.slice(-3);
 }
 
 function printStatusReport(config, data) {
     const m = config.military_features;
 
     console.log(chalk.green(`MODE: PROXY DIRECT-TO-MX (No SMTP Relay)`));
-    if (data.proxies.length > 0) {
-        const p = data.proxies[0].split('//')[1] || data.proxies[0];
-        console.log(chalk.green(`  Proxy: ${p.slice(0, 15)}...`));
+    if (data.proxies && data.proxies.length > 0) {
+        const p = data.proxies[0].includes('@') ? data.proxies[0].split('@')[1] : (data.proxies[0].split('//')[1] || data.proxies[0]);
+        const parts = p.split(':');
+        const host = parts[0];
+        const port = parts[1] || '';
+        const maskedHost = host.slice(0, 5) + "*".repeat(Math.max(0, host.length - 5));
+        console.log(chalk.green(`  Proxy: ${maskedHost}:${port}`));
     } else {
         console.log(chalk.red(`  Proxy: NONE (Direct)`));
     }
-    console.log(chalk.green(`  EHLO: Dynamic (matches sender domain)`));
+    console.log(chalk.green(`  EHLO: ${config.ehlo_hostname || 'Dynamic (matches sender domain)'}`));
     console.log(chalk.green(`  SENDERS: ${data.senders.length} sender email templates`));
     console.log(chalk.green(`  IP-HIDING: ${config.hide_sender ? 'DISABLED (your IP visible to sending proxy)' : 'ENABLED (Standard MIME)'}`));
     console.log(chalk.green(`  TEMPLATES: ${data.templates.length} loaded`));
     data.templates.slice(0, 2).forEach(t => console.log(chalk.gray(`    format/${t[0]}`)));
     if (data.templates.length > 2) console.log(chalk.gray(`    ... and ${data.templates.length - 2} more`));
 
-    console.log(chalk.blue(`  TEST EMAIL: Every ${config.test_email_interval || 100} emails to ${config.test_email || 'none'}`));
-    console.log(chalk.yellow(`  ATTACHMENTS: ${config.attachment_mode.toUpperCase()}`));
+    console.log(chalk.blue(`  TEST EMAIL: Every ${config.test_email_interval || 100} emails to ${maskEmail(config.test_email)}`));
+    console.log(chalk.yellow(`  ATTACHMENT: ${config.attachment_mode.toUpperCase()}`));
 
     console.log(chalk.cyan(`  SPEED: Level ${config.sending_speed}/10 | 200+ emails/min`));
     console.log(chalk.cyan(`  SETUP: Threads: ${config.max_threads} | Batch: 20 | Delay: 3.0s`));
@@ -149,7 +183,9 @@ async function main() {
     rl.close();
 
     // Proxy Loading logic
-    let proxies = load('proxies.txt');
+    const proxyFile = path.join(dataDir, 'proxies.txt');
+    let proxies = fs.existsSync(proxyFile) ? fs.readFileSync(proxyFile, 'utf8').split('\n').filter(l => l.trim()) : [];
+
     const encPath = path.join(__dirname, 'magxxic/proxy.enc');
     if (fs.existsSync(encPath)) {
         const encData = fs.readFileSync(encPath, 'utf8');
@@ -221,6 +257,11 @@ async function main() {
 
     console.log(chalk.green(`[LIST] Loaded ${recipients.length} valid recipients`));
     console.log(chalk.green(`[GO] LAUNCHING CAMPAIGN for ${recipients.length} recipients (Mode: PROXY DIRECT-TO-MX)`));
+    console.log(chalk.blue(`[INFO] Smart Speed Campaign - ${recipients.length} recipients | Mode: PROXY DIRECT-TO-MX`));
+    console.log(chalk.blue(`[INFO] Batch: 20 | Threads: ${config.max_threads}`));
+    console.log(chalk.blue(`[INFO] Test Email: Every ${config.test_email_interval || 100} emails to ${maskEmail(config.test_email)}`));
+
+    console.log(chalk.yellow(`[BATCH 01] Processing 1-${Math.min(recipients.length, 20)}`));
 
     const engine = new CampaignEngine(config, {
         recipients, proxies, senders, subjects, links, templates, attachmentTemplates

@@ -505,7 +505,7 @@ class CampaignEngine {
             return;
         }
 
-        const proxy = this.data.proxies.length > 0 ? this.data.proxies[this.proxyIndex++ % this.data.proxies.length] : null;
+        let proxy = this.data.proxies.length > 0 ? this.data.proxies[this.proxyIndex++ % this.data.proxies.length] : null;
         let rawSender = this.data.senders[Math.floor(Math.random() * this.data.senders.length)];
 
         // Sender Alias Logic

@@ -37,7 +37,7 @@ MAGXXIC VOT NO SMTP is a high-performance, professional-grade email delivery sys
 - `templates/`:
   - `format/`: HTML email body templates.
   - `attachments/`: HTML templates for PDF conversion.
-- `magxxic_attachments/`: Folder for direct file attachments.
+- `magxxic_vot_attachment/`: Folder for direct file attachments.
 - `imagecid/`: Folder for inline images (CID embedding).
 - `placeholder/`: Reference guide for the tag system.
 
@@ -62,10 +62,18 @@ The system supports over 96 dynamic tags using the `[[TAG_NAME]]` syntax.
    npm install
    ```
 
+## 🛡️ Activation
+This system requires HWID activation.
+1. Run `node magxxic_sender.js` for the first time.
+2. Copy your unique **HWID** shown on the screen.
+3. Contact the administrator to receive your **Activation Token**.
+4. Enter the token to unlock the system. The license is stored securely and encrypted.
+
 ## 🚀 Usage
 1. Configure your settings in `magxxic/config.json`.
-2. Populate the files in the `data/` folder.
-3. Start the delivery engine:
+2. Use the interactive menu to add your **DKIM Private Key**.
+3. Populate the files in the `data/` folder.
+4. Start the delivery engine:
    ```bash
    node magxxic_sender.js
    ```

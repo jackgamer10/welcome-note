@@ -6,6 +6,7 @@ const { CampaignEngine } = require('./magxxic/core/engine');
 const { validateProxies } = require('./magxxic/core/proxy_validator');
 const { decryptProxies } = require('./magxxic/core/proxy_loader');
 const { updateDkimKey } = require('./magxxic/core/update_dkim');
+const { getHWID, verifyToken, checkActivation, saveActivation } = require('./magxxic/core/license');
 const readline = require('readline');
 
 function printBanner() {
@@ -128,6 +129,35 @@ async function main() {
     console.log(chalk.blue("╔════════════════════════════════════════════════════════════════════════════════════════╗"));
     console.log(chalk.blue("║") + chalk.bold.yellow("                         ⚡ MAGXXIC VOT — CONTINUOUS MODE ⚡                         ") + chalk.blue("║"));
     console.log(chalk.blue("╚════════════════════════════════════════════════════════════════════════════════════════╝"));
+
+    // Activation Check
+    if (!checkActivation()) {
+        const hwid = getHWID();
+        console.log(chalk.red("\n[SYSTEM] LICENSE NOT ACTIVATED"));
+        console.log(chalk.white(`Your HWID: ${chalk.bold.yellow(hwid)}`));
+        console.log(chalk.gray("Please contact the administrator to get your activation token."));
+
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+
+        const token = await new Promise(resolve => {
+            rl.question(chalk.cyan("\nEnter Activation Token: "), resolve);
+        });
+
+        if (verifyToken(hwid, token)) {
+            saveActivation(hwid, token);
+            console.log(chalk.green("[SUCCESS] License activated! Restarting..."));
+            await new Promise(r => setTimeout(r, 1500));
+            rl.close();
+            return main(); // Restart main
+        } else {
+            console.log(chalk.red("[ERROR] Invalid token. Access denied."));
+            process.exit(1);
+        }
+    }
+
     console.log(chalk.gray("\n[INIT] Initializing core modules..."));
     await new Promise(r => setTimeout(r, 1000));
 

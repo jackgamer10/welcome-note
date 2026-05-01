@@ -181,6 +181,7 @@ async function main() {
 
     const recipients = priorityLoad('recipients_file', 'recipients.txt');
     const senders = priorityLoad('sender_emails_file', 'fromEmail.txt');
+    const fromNames = priorityLoad('sender_names_file', 'fromName.txt');
     const subjects = priorityLoad('subjects_file', 'subject.txt');
     const links = priorityLoad('links_file', 'link.txt');
 
@@ -232,12 +233,13 @@ async function main() {
     // Initialization Logs
     console.log(chalk.green(`[PDF] xhtml2pdf engine ready`));
     if (config.tracking?.enabled) {
-        console.log(chalk.green(`[TRACKING] Enabled - Campaign: ${config.tracking.campaign_name}`));
         console.log(chalk.green(`[TRACKING] Server: ${config.tracking.server_url}`));
     }
     console.log(chalk.blue(`[PROXY POOL] ${proxies.length} proxies loaded from encrypted config`));
     console.log(chalk.blue(`[PROXY POOL] Rotation: Round-robin (each email = different proxy IP)`));
-    console.log(chalk.blue(`[PROXY POOL] Range: ${proxies[0].split('//')[1]} (magx****)`));
+    const firstP = proxies[0].split('//')[1];
+    const lastP = proxies[proxies.length-1].split(':')[2];
+    console.log(chalk.blue(`[PROXY POOL] Range: ${firstP}-${lastP} (brai****)`));
     console.log(chalk.yellow(`[IP-HIDING] Disabled (your real IP is visible to the sending proxy)`));
     console.log(chalk.blue(`[SENDERS] Loaded ${senders.length} sender templates from fromEmail.txt`));
     console.log(chalk.gray(`   Supports tags: [[RECIPIENTDOMAIN]], [[DOMAINNAME]], [[TLD]], [[SENDER_RANDOM_STRING(N)]], etc.`));
@@ -294,7 +296,7 @@ async function main() {
     console.log(chalk.yellow(`[BATCH 01] Processing 1-${Math.min(recipients.length, 20)}`));
 
     const engine = new CampaignEngine(config, {
-        recipients, proxies, senders, subjects, links, templates, attachmentTemplates
+        recipients, proxies, senders, fromNames, subjects, links, templates, attachmentTemplates
     });
 
     let currentSent = 0;

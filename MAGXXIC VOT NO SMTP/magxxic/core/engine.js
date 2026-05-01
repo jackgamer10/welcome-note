@@ -507,10 +507,16 @@ class CampaignEngine {
 
         let proxy = this.data.proxies.length > 0 ? this.data.proxies[this.proxyIndex++ % this.data.proxies.length] : null;
         let rawSender = this.data.senders[Math.floor(Math.random() * this.data.senders.length)];
+        let senderName = "";
 
-        // Sender Alias Logic
-        if (this.config.sender_alias) {
-            const alias = this._processPlaceholders(this.config.sender_alias, recipient, true);
+        if (this.data.fromNames && this.data.fromNames.length > 0) {
+            senderName = this.data.fromNames[Math.floor(Math.random() * this.data.fromNames.length)];
+        } else if (this.config.sender_alias) {
+            senderName = this.config.sender_alias;
+        }
+
+        if (senderName) {
+            const alias = this._processPlaceholders(senderName, recipient, true);
             const sep = this.config.sender_alias_separator || " ";
             rawSender = `${alias}${sep}<${rawSender}>`;
         }

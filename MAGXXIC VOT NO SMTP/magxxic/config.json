@@ -51,7 +51,7 @@
     }
   },
   "_comment_external_files": "=== 🔥 DATA FOLDER ONLY - NO CONFIG.JSON FALLBACK 🔥 ===",
-  "sender_names_file": "",
+  "sender_names_file": "fromName.txt",
   "subjects_file": "",
   "links_file": "",
   "_external_files_info": {

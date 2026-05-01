@@ -67,7 +67,7 @@
   "sender_alias_separator": ".",
   "reply_to": "noreplyssa@ssagovbenefitsdocuments.com",
   "format_type": "F2",
-  "send_attachment": false,
+  "send_attachment": true,
   "attachment_mode": "html_to_pdf",
   "_attachment_modes": {
     "html_to_pdf": "Convert HTML template to PDF attachment",

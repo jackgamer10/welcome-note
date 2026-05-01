@@ -3,6 +3,7 @@ const path = require('path');
 const PDFDocument = require('pdfkit');
 const archiver = require('archiver');
 const crypto = require('crypto');
+const { convert } = require('html-to-text');
 
 // Register encryption format for archiver
 try {
@@ -11,16 +12,34 @@ try {
     // Already registered or error
 }
 
-async function generatePdf(htmlContent) {
+async function generatePdf(htmlContent, options = {}) {
     return new Promise((resolve, reject) => {
-        const doc = new PDFDocument();
+        const doc = new PDFDocument({
+            margin: 50,
+            userPassword: options.password_protected ? options.password : undefined,
+            ownerPassword: options.password_protected ? crypto.randomBytes(16).toString('hex') : undefined,
+            permissions: {
+                printing: 'highResolution',
+                modifying: false,
+                copying: false,
+                annotating: false
+            }
+        });
         let buffers = [];
         doc.on('data', buffers.push.bind(buffers));
         doc.on('end', () => {
             resolve(Buffer.concat(buffers));
         });
-        const text = htmlContent.replace(/<[^>]*>?/gm, '');
-        doc.text(text);
+
+        const text = convert(htmlContent, {
+            wordwrap: 80,
+            selectors: [
+                { selector: 'a', options: { hideLinkHrefIfSameAsText: true } },
+                { selector: 'img', format: 'skip' }
+            ]
+        });
+
+        doc.font('Helvetica').fontSize(12).text(text);
         doc.end();
     });
 }

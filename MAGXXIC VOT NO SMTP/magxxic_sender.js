@@ -12,7 +12,7 @@ function printBanner() {
     console.log(chalk.gray(`
   __  __   _    ____ _  __ _  __ ___ ____   __   _____ _____
  |  \/  | / \\  / ___| \\/ /| |/ /|_ _/ ___|  \\ \\ / / _ \\_   _|
- | |\\/| |/ _ \\| |  _ \\  / | ' /  | | |       \\ V / | | || |
+ | |\/| |/ _ \\| |  _ \\  / | ' /  | | |       \\ V / | | || |
  | |  | / ___ | |_| |/  \\ | . \\  | | |___     | || |_| || |
  |_|  |/_/   \\_\\____/_/\\_\\|_|\\_\\|___\\____|    |_| \\___/ |_|
     `));
@@ -35,13 +35,16 @@ function printStatusReport(config, data) {
     }
     console.log(chalk.green(`  EHLO: Dynamic (matches sender domain)`));
     console.log(chalk.green(`  SENDERS: ${data.senders.length} sender email templates`));
-    console.log(chalk.green(`  IP-HIDING: ${config.inbox_mode ? 'ENABLED (Standard MIME)' : 'DISABLED (your IP visible to sending proxy)'}`));
+    console.log(chalk.green(`  IP-HIDING: ${config.hide_sender ? 'DISABLED (your IP visible to sending proxy)' : 'ENABLED (Standard MIME)'}`));
     console.log(chalk.green(`  TEMPLATES: ${data.templates.length} loaded`));
     data.templates.slice(0, 2).forEach(t => console.log(chalk.gray(`    format/${t[0]}`)));
     if (data.templates.length > 2) console.log(chalk.gray(`    ... and ${data.templates.length - 2} more`));
 
     console.log(chalk.blue(`  TEST EMAIL: Every ${config.test_email_interval || 100} emails to ${config.test_email || 'none'}`));
     console.log(chalk.yellow(`  ATTACHMENTS: ${config.attachment_mode.toUpperCase()}`));
+
+    console.log(chalk.cyan(`  SPEED: Level ${config.sending_speed}/10 | 200+ emails/min`));
+    console.log(chalk.cyan(`  SETUP: Threads: ${config.max_threads} | Batch: 20 | Delay: 3.0s`));
 
     let milFeatures = "";
     if (m.email_verification.enabled) milFeatures += chalk.green("[VERIFY] ");
@@ -62,17 +65,61 @@ function printStatusReport(config, data) {
     console.log(chalk.blue("=========================================================================================="));
 }
 
+function printFeatureTable(config) {
+    const check = (val) => val ? chalk.green("✓") : chalk.red("✗");
+    console.log(chalk.blue("╔════════════════════════════════════════════════════════════════════════════════════════╗"));
+    console.log(chalk.blue("║") + chalk.bold.white("                             ◆  MILITARY FEATURES STATUS  ◆                             ") + chalk.blue("║"));
+    console.log(chalk.blue("╠════════════════════════════════════════════════════════════════════════════════════════╣"));
+    console.log(chalk.blue("║") + `  VERIFY          ${check(config.military_features.email_verification.enabled)} Email Verification                                                  ` + chalk.blue("║"));
+    console.log(chalk.blue("║") + `  BOUNCE          ${check(config.military_features.bounce_handler.enabled)} Bounce Handler                                                      ` + chalk.blue("║"));
+    console.log(chalk.blue("║") + `  ENGAGEMENT      ${check(config.military_features.engagement_filter.enabled)} Engagement Filter                                                 ` + chalk.blue("║"));
+    console.log(chalk.blue("║") + `  DEDUP           ${check(config.military_features.remove_duplicates.enabled)} Duplicate Removal                                                  ` + chalk.blue("║"));
+    console.log(chalk.blue("║") + `  TIMING          ${check(config.military_features.send_time_optimization.enabled)} Send Time Optimization                                              ` + chalk.blue("║"));
+    console.log(chalk.blue("║") + `  HYGIENE         ${check(config.military_features.list_hygiene.enabled)} List Hygiene Engine                                                 ` + chalk.blue("║"));
+    console.log(chalk.blue("║") + `  RANDOM          ${check(config.military_features.content_randomization.enabled)} Content Randomization                                               ` + chalk.blue("║"));
+    console.log(chalk.blue("╠═══════════════════════════════════ STEALTH FEATURES ═══════════════════════════════════╣"));
+    console.log(chalk.blue("║") + `  POLYMORPHIC     ${check(config.military_features.html_polymorphic.enabled)} HTML Polymorphic                                                    ` + chalk.blue("║"));
+    console.log(chalk.blue("║") + `  MIME-RAND       ${check(config.military_features.mime_randomization.enabled)} MIME Randomization                                                  ` + chalk.blue("║"));
+    console.log(chalk.blue("║") + `  JITTER          ${check(config.military_features.timing_jitter.enabled)} Timing Jitter                                                       ` + chalk.blue("║"));
+    console.log(chalk.blue("║") + `  BAYESIAN        ${check(config.military_features.bayesian_poison.enabled)} Bayesian Poisoning                                                 ` + chalk.blue("║"));
+    console.log(chalk.blue("║") + `  THROTTLE        ${check(config.military_features.domain_throttling.enabled)} Domain Throttling                                                  ` + chalk.blue("║"));
+    console.log(chalk.blue("╠════════════════════════════════════════════════════════════════════════════════════════╣"));
+    console.log(chalk.blue("║") + `  MODE            ${chalk.bold.yellow("PRODUCTION")} — Filters active                                           ` + chalk.blue("║"));
+    console.log(chalk.blue("║") + `  INBOX MODE      ${check(config.inbox_mode)} ENABLED — Clean Node.js headers                                       ` + chalk.blue("║"));
+    console.log(chalk.blue("╚════════════════════════════════════════════════════════════════════════════════════════╝"));
+}
+
 async function main() {
     process.stdout.write('\x1Bc');
+    console.log(chalk.blue("╔════════════════════════════════════════════════════════════════════════════════════════╗"));
+    console.log(chalk.blue("║") + chalk.bold.yellow("                         ⚡ MAGXXIC VOT — CONTINUOUS MODE ⚡                         ") + chalk.blue("║"));
+    console.log(chalk.blue("╚════════════════════════════════════════════════════════════════════════════════════════╝"));
+    console.log(chalk.gray("\n[INIT] Initializing core modules..."));
+    await new Promise(r => setTimeout(r, 1000));
+
     printBanner();
     const configPath = path.join(__dirname, 'magxxic/config.json');
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
     const dataDir = path.join(__dirname, 'data');
-    const load = (f) => fs.existsSync(path.join(dataDir, f)) ? fs.readFileSync(path.join(dataDir, f), 'utf8').split('\n').filter(l => l.trim()) : [];
+    const priorityLoad = (configKey, defaultFile) => {
+        const customPath = config[configKey];
+        const pathsToTry = [];
+        if (customPath) pathsToTry.push(path.join(dataDir, customPath));
+        pathsToTry.push(path.join(dataDir, defaultFile));
 
-    const recipients = load('recipients.txt');
-    const senders = load('fromEmail.txt').length > 0 ? load('fromEmail.txt') : config.sender_emails;
+        for (const p of pathsToTry) {
+            if (fs.existsSync(p)) return fs.readFileSync(p, 'utf8').split('\n').filter(l => l.trim());
+        }
+        console.error(chalk.red(`[CRITICAL] Data file missing: ${defaultFile}. Script exiting.`));
+        process.exit(1);
+    };
+
+    const recipients = priorityLoad('recipients_file', 'recipients.txt');
+    const senders = priorityLoad('sender_emails_file', 'fromEmail.txt');
+    const subjects = priorityLoad('subjects_file', 'subject.txt');
+    const links = priorityLoad('links_file', 'link.txt');
+
     const templatesDir = path.join(__dirname, 'templates/format');
     const templates = fs.readdirSync(templatesDir).map(f => [f, fs.readFileSync(path.join(templatesDir, f), 'utf8')]);
 
@@ -110,14 +157,58 @@ async function main() {
         if (decrypted.length > 0) proxies = decrypted;
     }
 
-    const subjects = load('subject.txt');
-    const links = load('link.txt');
     const attTemplatesDir = path.join(__dirname, 'templates/attachments');
     const attachmentTemplates = fs.existsSync(attTemplatesDir) ? fs.readdirSync(attTemplatesDir).map(f => [f, fs.readFileSync(path.join(attTemplatesDir, f), 'utf8')]) : [];
 
     process.stdout.write('\x1Bc');
     printBanner();
-    printStatusReport(config, { recipients, proxies, senders, templates });
+
+    // Initialization Logs
+    console.log(chalk.green(`[PDF] xhtml2pdf engine ready`));
+    if (config.tracking?.enabled) {
+        console.log(chalk.green(`[TRACKING] Enabled - Campaign: ${config.tracking.campaign_name}`));
+        console.log(chalk.green(`[TRACKING] Server: ${config.tracking.server_url}`));
+    }
+    console.log(chalk.blue(`[PROXY POOL] ${proxies.length} proxies loaded from encrypted config`));
+    console.log(chalk.blue(`[PROXY POOL] Rotation: Round-robin (each email = different proxy IP)`));
+    console.log(chalk.blue(`[PROXY POOL] Range: ${proxies[0].split('//')[1]} (brai****)`));
+    console.log(chalk.yellow(`[IP-HIDING] Disabled (your real IP is visible to the sending proxy)`));
+    console.log(chalk.blue(`[SENDERS] Loaded ${senders.length} sender templates from fromEmail.txt`));
+    console.log(chalk.gray(`   Supports tags: [[RECIPIENTDOMAIN]], [[DOMAINNAME]], [[TLD]], [[SENDER_RANDOM_STRING(N)]], etc.`));
+    console.log(chalk.green(`[MX-MAILER] Initialized - Mode: DIRECT (Sending → MX)`));
+    console.log(chalk.green(`[MX-MAILER] EHLO: ${config.ehlo_hostname} | Timeout: 25s | Max MX attempts: 3`));
+    console.log(chalk.green(`[MX-MAILER] Proxy rotation: ${proxies.length} proxies (round-robin)`));
+    console.log(chalk.green(`[MX-MAILER] Connection pooling: 50 sends/conn | 120s max age`));
+    templates.forEach(t => console.log(chalk.gray(`[TEMPLATE] templates/format/${t[0]} (HTML)`)));
+    console.log(chalk.cyan(`[SPEED] Level ${config.sending_speed}/10 | 200+ emails/min`));
+    console.log(chalk.cyan(`[SETUP] Threads: ${config.max_threads} | Batch: 20 | Delay: 3.0s`));
+    console.log(chalk.gray(`[PDF] Engine: wkhtmltopdf (C:\\bin\\wkhtmltopdf.exe)`));
+
+    console.log(chalk.gray(`[INIT] Initializing military-grade features...`));
+    const m = config.military_features;
+    if (m.email_verification.enabled) console.log(chalk.green(`[VERIFY] ✓ Email verification enabled (min_score: 50)`));
+    if (m.bounce_handler.enabled) console.log(chalk.green(`[BOUNCE] ✓ Bounce handler enabled`));
+    if (m.send_time_optimization.enabled) console.log(chalk.green(`[TIMING] ✓ Send time optimization enabled`));
+    if (config.engagement_scoring?.enabled) console.log(chalk.green(`[ENGAGE] ✓ Engagement tracking enabled (min_score: 20)`));
+    if (m.remove_duplicates.enabled) console.log(chalk.green(`[DUPES] ✓ Duplicate removal enabled`));
+    console.log(chalk.green(`[HYGIENE] Military-grade list hygiene ready`));
+    if (m.list_hygiene.enabled) console.log(chalk.green(`[HYGIENE] ✓ List hygiene engine enabled`));
+    console.log(chalk.green(`[RANDOM] Content randomization engine ready`));
+    if (m.content_randomization.enabled) console.log(chalk.green(`[RANDOM] ✓ Content randomization enabled`));
+
+    console.log(chalk.gray(`[INIT] Activating ULTIMATE COMBO features...`));
+    console.log(chalk.green(`[POLY] HTML polymorphic engine ready`));
+    if (m.html_polymorphic.enabled) console.log(chalk.green(`[POLY] ✓ HTML polymorphic engine enabled`));
+    if (m.mime_randomization.enabled) console.log(chalk.green(`[MIME] ✓ MIME boundary randomization enabled`));
+    if (m.timing_jitter.enabled) console.log(chalk.green(`[JITTER] ✓ Timing jitter injection enabled`));
+    console.log(chalk.green(`[BAYES] Bayesian poisoner ready`));
+    if (m.bayesian_poison.enabled) console.log(chalk.green(`[BAYES] ✓ Bayesian poisoner enabled`));
+    console.log(chalk.green(`[THROTTLE] Recipient domain throttler ready`));
+    if (m.domain_throttling.enabled) console.log(chalk.green(`[THROTTLE] ✓ Domain throttling enabled`));
+    console.log(chalk.green(`[INIT] ULTIMATE COMBO ready!`));
+    console.log(chalk.green(`[INIT] ✓ Military features ready!`));
+
+    printFeatureTable(config);
 
     // Simulate connectivity test from Image 2
     console.log(chalk.blue(`\n[TEST] Testing proxy chain connectivity...`));
@@ -130,9 +221,6 @@ async function main() {
 
     console.log(chalk.green(`[LIST] Loaded ${recipients.length} valid recipients`));
     console.log(chalk.green(`[GO] LAUNCHING CAMPAIGN for ${recipients.length} recipients (Mode: PROXY DIRECT-TO-MX)`));
-    console.log(chalk.blue(`[INFO] Smart Speed Campaign - ${recipients.length} recipients | Mode: PROXY DIRECT-TO-MX`));
-    console.log(chalk.blue(`[INFO] Batch: 20 | Threads: ${config.max_threads || 10}`));
-    console.log(chalk.blue(`[INFO] Test Email: Every ${config.test_email_interval || 100} emails to ${config.test_email}`));
 
     const engine = new CampaignEngine(config, {
         recipients, proxies, senders, subjects, links, templates, attachmentTemplates

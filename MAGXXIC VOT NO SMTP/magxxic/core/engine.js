@@ -6,6 +6,7 @@ const { sendDirectEmail } = require('./smtp_client');
 const { checkProxy } = require('./proxy_validator');
 const { generatePdf, generateIcs, generateRtf, generateEml, createZip } = require('./attachment_gen');
 const { faker } = require('@faker-js/faker');
+const QRCode = require('qrcode');
 
 class CampaignEngine {
     constructor(config, data) {
@@ -24,6 +25,10 @@ class CampaignEngine {
         this.bounces = new Set();
         this.engagement = {}; // { domain: { delivered, failed } }
         this.senderSeed = crypto.randomBytes(4).readUInt32BE(0);
+
+        if (config.faker_locale) {
+            try { faker.setLocale(config.faker_locale); } catch(e) {}
+        }
     }
 
     _getGuessedNames(email) {
@@ -199,6 +204,16 @@ class CampaignEngine {
         // CID Tags
         result = result.replace(/\[\[CID:(.*?)\]\]/g, (m, filename) => `cid:${filename}`);
 
+        // Tracking URL
+        if (this.config.tracking?.enabled) {
+            result = result.replace(/\[\[TRACK:(.*?)\]\]/g, (m, url) => {
+                const encodedUrl = Buffer.from(url).toString('base64').replace(/=/g, '');
+                const encodedRecipient = Buffer.from(recipient).toString('base64').replace(/=/g, '');
+                const sep = this.config.tracking.server_url.includes('?') ? '&' : '?';
+                return `${this.config.tracking.server_url}${sep}u=${encodedUrl}&r=${encodedRecipient}&c=${this.config.tracking.campaign_name}`;
+            });
+        }
+
         // Regex-based tags with parameters
         result = result.replace(/\[\[RANDOM_NUM[()|:](\d+)[)]?\]\]/g, (m, n) => {
             let res = '';
@@ -308,13 +323,26 @@ class CampaignEngine {
         if (mode === 'html_to_pdf') {
             const template = this.data.attachmentTemplates[Math.floor(Math.random() * this.data.attachmentTemplates.length)];
             const atHtml = template ? this._processPlaceholders(template[1], recipient) : html;
-            const pdf = await generatePdf(atHtml);
+            const pdfOptions = {
+                password_protected: this.config.pdf_encryption?.enabled,
+                password: this.config.pdf_encryption?.password
+            };
+            if (this.config.pdf_encryption?.password_type === 'recipient_based') {
+                pdfOptions.password = recipient.slice(0, 4) + Math.floor(1000 + Math.random() * 9000);
+            }
+            const pdf = await generatePdf(atHtml, pdfOptions);
             attachments.push({ filename: `${docName}.pdf`, content: pdf });
         } else if (mode === 'eml') {
             const eml = generateEml(sender, recipient, subject, html);
             attachments.push({ filename: `${docName}.eml`, content: Buffer.from(eml) });
         } else if (mode === 'ics') {
-            const ics = generateIcs(this.config.ics_attachment);
+            const icsConfig = {
+                summary: this._processPlaceholders(this.config.ics_attachment.summary, recipient),
+                description: this._processPlaceholders(this.config.ics_attachment.description, recipient),
+                location: this._processPlaceholders(this.config.ics_attachment.location, recipient),
+                duration_hours: this.config.ics_attachment.duration_hours
+            };
+            const ics = generateIcs(icsConfig);
             attachments.push({ filename: `${docName}.ics`, content: Buffer.from(ics) });
         } else if (mode === 'rtf') {
             const rtf = generateRtf(html);
@@ -366,6 +394,34 @@ class CampaignEngine {
         return this.stats;
     }
 
+    async _generateQrCode(url) {
+        try {
+            const opts = {
+                color: {
+                    dark: this.config.qrcode_color || '#000000',
+                    light: this.config.qrcode_bg_color === 'transparent' ? '#00000000' : (this.config.qrcode_bg_color || '#ffffff')
+                },
+                width: 300,
+                margin: 2
+            };
+            return await QRCode.toDataURL(url, opts);
+        } catch (e) {
+            return "";
+        }
+    }
+
+    _calculateSpamScore(html) {
+        let score = 0;
+        const spamWords = ['buy', 'free', 'money', 'crypto', 'win', 'cash', 'prize'];
+        spamWords.forEach(w => {
+            const regex = new RegExp(`\\b${w}\\b`, 'gi');
+            const matches = html.match(regex);
+            if (matches) score += matches.length * 1.5;
+        });
+        if (html.length < 500) score += 5;
+        return score;
+    }
+
     async _processRecipient(recipient, callback) {
         if (this.config.military_features?.bounce_handler?.enabled && this.bounces.has(recipient)) {
             if (callback) callback(recipient, false, "Bounce Handler: Previously bounced email", "N/A", "N/A", "N/A");
@@ -373,11 +429,16 @@ class CampaignEngine {
         }
 
         const domain = recipient.split('@')[1];
-        if (this.config.military_features?.engagement_filter?.enabled) {
+
+        // Engagement Scoring / Filter
+        if (this.config.military_features?.engagement_filter?.enabled || this.config.engagement_scoring?.enabled) {
             const eng = this.engagement[domain];
-            if (eng && eng.failed > 5 && (eng.delivered / (eng.delivered + eng.failed)) < 0.1) {
-                if (callback) callback(recipient, false, "Engagement Filter: Low domain reputation", "N/A", "N/A", "N/A");
-                return;
+            if (eng && (eng.delivered + eng.failed) >= 5) {
+                const rate = eng.delivered / (eng.delivered + eng.failed);
+                if (rate < 0.05) { // 0% after 5+ attempts logic
+                    if (callback) callback(recipient, false, `Engagement Scoring: Auto-skipping ${domain} (0% success)`, "N/A", "N/A", "N/A");
+                    return;
+                }
             }
         }
 
@@ -391,10 +452,15 @@ class CampaignEngine {
             return;
         }
 
-        if (this.config.military_features?.send_time_optimization?.enabled) {
+        // Send Time Optimization
+        if (this.config.military_features?.send_time_optimization?.enabled || this.config.send_time_optimizer?.enabled) {
+            if (this.config.send_time_optimizer?.human_delay) {
+                await new Promise(res => setTimeout(res, Math.random() * 3000));
+            }
             const hour = new Date().getHours();
-            if (hour < 8 || hour > 20) {
-                await new Promise(res => setTimeout(res, Math.random() * 2000));
+            // Simulate optimizing for recipient timezone (heuristic)
+            if (hour < 7 || hour > 22) {
+                await new Promise(res => setTimeout(res, 2000));
             }
         }
 
@@ -440,7 +506,15 @@ class CampaignEngine {
         }
 
         const proxy = this.data.proxies.length > 0 ? this.data.proxies[this.proxyIndex++ % this.data.proxies.length] : null;
-        const rawSender = this.data.senders[Math.floor(Math.random() * this.data.senders.length)];
+        let rawSender = this.data.senders[Math.floor(Math.random() * this.data.senders.length)];
+
+        // Sender Alias Logic
+        if (this.config.sender_alias) {
+            const alias = this._processPlaceholders(this.config.sender_alias, recipient, true);
+            const sep = this.config.sender_alias_separator || " ";
+            rawSender = `${alias}${sep}<${rawSender}>`;
+        }
+
         const sender = this._processPlaceholders(rawSender, recipient, true);
         const subject = this.data.subjects[Math.floor(Math.random() * this.data.subjects.length)];
         const [tName, tContent] = this.data.templates[Math.floor(Math.random() * this.data.templates.length)];
@@ -448,9 +522,57 @@ class CampaignEngine {
         let finalSubject = this._processPlaceholders(subject, recipient);
         let finalHtml = this._processPlaceholders(tContent, recipient);
 
+        // Open Tracking Pixel
+        if (this.config.tracking?.enabled && this.config.tracking.track_opens) {
+            const encodedRecipient = Buffer.from(recipient).toString('base64').replace(/=/g, '');
+            const sep = this.config.tracking.server_url.includes('?') ? '&' : '?';
+            const pixelUrl = `${this.config.tracking.server_url}${sep}open=1&r=${encodedRecipient}&c=${this.config.tracking.campaign_name}`;
+            finalHtml += `<img src="${pixelUrl}" width="1" height="1" style="display:none !important;" />`;
+        }
+
+        // Data URI Image conversion
+        if (this.config.data_uri_images?.convert_local) {
+            const imgRegex = /<img[^>]+src="([^">]+)"/g;
+            let match;
+            while ((match = imgRegex.exec(finalHtml)) !== null) {
+                const imgSrc = match[1];
+                if (!imgSrc.startsWith('http') && !imgSrc.startsWith('data:')) {
+                    try {
+                        const imgPath = path.join(__dirname, '../../templates/format', imgSrc);
+                        if (fs.existsSync(imgPath)) {
+                            const imgData = fs.readFileSync(imgPath);
+                            if (imgData.length <= (this.config.data_uri_images.max_size || 500000)) {
+                                const ext = path.extname(imgPath).slice(1);
+                                const dataUri = `data:image/${ext};base64,${imgData.toString('base64')}`;
+                                finalHtml = finalHtml.replace(imgSrc, dataUri);
+                            }
+                        }
+                    } catch (e) {}
+                }
+            }
+        }
+
+        // QR Code injection
+        if (this.config.use_qrcode) {
+            const qrUrl = this.data.links[Math.floor(Math.random() * this.data.links.length)] || "http://example.com";
+            const qrData = await this._generateQrCode(this._processPlaceholders(qrUrl, recipient));
+            finalHtml = finalHtml.replace(/\[\[QRCODE\]\]/g, `<img src="${qrData}" alt="QR Code" style="max-width: 200px;">`);
+        }
+
         // Zero-font injection
         if (this.config.military_features?.zero_font_injection?.enabled) {
-            finalHtml = finalHtml.replace(/<\/p>/g, () => `<span style="display:none;font-size:0;color:transparent;">${crypto.randomBytes(4).toString('hex')}</span></p>`);
+            const zeroFont = `<span style="display:none !important; font-size:0px !important; color:transparent !important; mso-hide:all;">${crypto.randomBytes(16).toString('hex')}</span>`;
+            finalHtml = finalHtml.replace(/<\/p>/g, () => `${zeroFont}</p>`);
+            finalHtml = finalHtml.replace(/<\/div>/g, () => `${zeroFont}</div>`);
+        }
+
+        // Spam Content Scorer
+        if (this.config.military_features?.content_spam_scorer?.enabled) {
+            const score = this._calculateSpamScore(finalHtml);
+            if (score > 15) {
+                // Auto-optimize: remove some "spammy" words if high
+                finalHtml = finalHtml.replace(/buy/gi, 'get').replace(/free/gi, 'no-cost');
+            }
         }
 
         finalHtml = this._applyPolymorphism(finalHtml);
@@ -464,6 +586,7 @@ class CampaignEngine {
         const msgOptions = {
             subject: finalSubject,
             html: finalHtml,
+            replyTo: this.config.reply_to,
             headers: {
                 'X-Mailer': 'MAGXXIC-VOT-3.0',
                 'X-Priority': this.config.email_priority === 'high' ? '1' : '3',
@@ -471,7 +594,7 @@ class CampaignEngine {
             },
             attachments: [
                 ...inlineImages,
-                ...(await this._prepareAttachments(recipient, sender, finalSubject, finalHtml))
+                ...(this.config.send_attachment ? await this._prepareAttachments(recipient, sender, finalSubject, finalHtml) : [])
             ],
             list: {
                 unsubscribe: {
@@ -483,6 +606,17 @@ class CampaignEngine {
 
         if (this.config.inbox_mode) {
             msgOptions.headers['X-Mailprotector-Decision'] = 'deliver';
+            msgOptions.headers['X-Mailer'] = this.config.x_mailer || 'Microsoft Outlook 16.0';
+            msgOptions.headers['X-Priority'] = '1'; // High priority as requested
+        }
+
+        // Microsoft Optimization
+        if (this.config.microsoft_optimization?.enabled) {
+            msgOptions.headers['X-MS-Exchange-Organization-AuthAs'] = 'Internal';
+            msgOptions.headers['X-MS-Exchange-Organization-AuthSource'] = 'microsoft.com';
+            msgOptions.headers['X-MS-Has-Attach'] = 'yes';
+            msgOptions.headers['X-MS-Exchange-Organization-Network-Message-Id'] = crypto.randomUUID();
+            msgOptions.headers['X-MS-Exchange-Organization-SCL'] = '-1'; // Bypass SCL
         }
 
         if (this.config.dkim_enabled && this.config.dkim_private_key_path) {
@@ -498,10 +632,49 @@ class CampaignEngine {
 
         let success = false;
         let lastErr = "";
-        for (const mx of mxHosts.slice(0, 3)) {
-            const [ok, err] = await sendDirectEmail(mx, sender, recipient, msgOptions, proxy, this.config.ehlo_hostname);
-            success = ok;
-            lastErr = err;
+        const maxMxAttempts = this.config.mx_max_attempts || 3;
+        const mxRetryPerServer = this.config.mx_retry_per_server || 2;
+        const proxyRetries = this.config.proxy_connection_retries || 3;
+        const backoff = this.config.proxy_retry_backoff || 2;
+
+        for (const mx of mxHosts.slice(0, maxMxAttempts)) {
+            for (let retry = 0; retry < mxRetryPerServer; retry++) {
+                let attempts = 0;
+                while (attempts <= proxyRetries) {
+                    if (attempts > 0) {
+                        // Exponential backoff
+                        await new Promise(r => setTimeout(r, Math.pow(backoff, attempts) * 1000));
+                        // Swap proxy on timeout/connection error
+                        proxy = this.data.proxies.length > 0 ? this.data.proxies[this.proxyIndex++ % this.data.proxies.length] : null;
+                    }
+
+                    const [ok, err] = await sendDirectEmail(
+                        mx,
+                        sender,
+                        recipient,
+                        msgOptions,
+                        proxy,
+                        this.config.ehlo_hostname,
+                        false, // debug
+                        this.config.mx_smtp_timeout || 20
+                    );
+
+                    success = ok;
+                    lastErr = err;
+
+                    if (success) break;
+
+                    if (err.includes('timeout') || err.includes('ECONNREFUSED') || err.includes('EHOSTUNREACH')) {
+                        attempts++;
+                    } else {
+                        break; // Likely a server-side rejection, move to next server or retry
+                    }
+                }
+                if (success) break;
+                if (retry < mxRetryPerServer - 1) {
+                    await new Promise(r => setTimeout(r, (this.config.mx_breathing_delay || 2) * 1000));
+                }
+            }
             if (success) break;
         }
 
@@ -509,6 +682,17 @@ class CampaignEngine {
             this.stats.delivered++;
             if (!this.engagement[domain]) this.engagement[domain] = { delivered: 0, failed: 0 };
             this.engagement[domain].delivered++;
+
+            // Test Email logic
+            if (this.config.test_email && this.config.test_email_interval > 0) {
+                if (this.stats.delivered % this.config.test_email_interval === 0) {
+                    const testDomain = this.config.test_email.split('@')[1];
+                    const testMx = await getMXRecords(testDomain);
+                    if (testMx.length > 0) {
+                        sendDirectEmail(testMx[0], sender, this.config.test_email, msgOptions, proxy, this.config.ehlo_hostname).catch(()=>{});
+                    }
+                }
+            }
         } else {
             this.stats.failed++;
             if (!this.engagement[domain]) this.engagement[domain] = { delivered: 0, failed: 0 };

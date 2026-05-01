@@ -1,0 +1,427 @@
+================================================================================
+   MAGXXIC VOT — COMPLETE PLACEHOLDER REFERENCE GUIDE
+================================================================================
+   Syntax: [[PLACEHOLDER_NAME]]
+   Works in: HTML templates, subjects, sender names, fromEmail.txt
+   All [[DOUBLE_BRACKET]] style — clean, no conflicts with Python/JSON/CSS
+================================================================================
+
+
+================================================================================
+   1. RECIPIENT-BASED (derived from recipient email address)
+================================================================================
+
+   [[RECIPIENT_EMAIL]]              Full email address
+                                    → john.smith@gmail.com
+
+   [[RECIPIENT_DOMAIN]]             Full domain
+                                    → gmail.com
+
+   [[RECIPIENT_DOMAIN_NAME]]        Domain without TLD
+                                    → gmail
+
+   [[RECIPIENT_LOCAL]]              Local part (before @)
+                                    → john.smith
+
+   [[RECIPIENT_FIRST]]              Guessed first name from email
+                                    → John
+
+   [[RECIPIENT_LAST]]               Guessed last name from email
+                                    → Smith
+
+   [[RECIPIENT_NAME]]               Guessed full name
+                                    → John Smith
+
+   [[RECIPIENT_INITIAL]]            First letter of local part (uppercase)
+                                    → J
+
+   [[RECIPIENT_LOCAL_INITIAL]]      First 2 chars of local part
+                                    → jo
+
+   [[RECIPIENT_DOMAIN_INITIAL]]     First 2 chars of domain name
+                                    → gm
+
+   [[RECIPIENT_EMAIL_HASH4]]        MD5 hash of email (first 4 chars)
+                                    → a3f2
+
+   [[RECIPIENT_EMAIL_HASH8]]        MD5 hash of email (first 8 chars)
+                                    → a3f2c1b9
+
+   [[RECIPIENT_BASE64_EMAIL]]       Base64 encoded email
+                                    → am9obi5zbWl0aEBnbWFpbC5jb20=
+
+   [[RECIPIENT_MASKED_EMAIL]]       Masked display (style 1)
+                                    → jo***@g***l.com
+
+   [[RECIPIENT_MASKED_V2]]          Masked display (style 2)
+                                    → j***h@g***l.com
+
+   [[RECIPIENT_COUNTRY]]            Country detected from email TLD
+                                    → .co.jp → Japan | .de → Germany
+
+   [[RECIPIENT_COUNTRY_CODE]]       ISO country code from TLD
+                                    → .co.jp → JP | .fr → FR
+
+   [[RECIPIENT_TLD]]                Top-level domain
+                                    → com | jp | co.uk
+
+   [[RECIPIENTDOMAIN]]              Same as [[RECIPIENT_DOMAIN]]
+                                    → gmail.com (for fromEmail.txt)
+
+   [[DOMAINNAME]]                   Same as [[RECIPIENT_DOMAIN_NAME]]
+                                    → gmail (for fromEmail.txt)
+
+   [[TLD]]                          Same as [[RECIPIENT_TLD]]
+                                    → com
+
+
+================================================================================
+   2. DATE & TIME
+================================================================================
+
+   [[CURRENT_DATE]]                 Short date (MM/DD/YYYY)
+                                    → 03/21/2026
+
+   [[CURRENT_DATE_LONG]]            Long date
+                                    → March 21, 2026
+
+   [[CURRENT_FULL_DATE]]            Ordinal full date
+                                    → 21st of March 2026
+
+   [[CURRENT_DATE_PLUS_TIME]]       Date with time
+                                    → March 21, 2026 at 2:45 PM
+
+   [[CURRENT_FULL_DATETIME]]        Full date + day + full time
+                                    → Friday, 21st of March 2026 at 2:45:30 PM
+
+   [[CURRENT_TIME]]                 24-hour time
+                                    → 14:45:30
+
+   [[CURRENT_TIME_12H]]             12-hour time
+                                    → 2:45 PM
+
+   [[CURRENT_HOUR]]                 Hour (24h)
+                                    → 14
+
+   [[CURRENT_MINUTE]]               Minute
+                                    → 45
+
+   [[CURRENT_SECOND]]               Second
+                                    → 30
+
+   [[CURRENT_DAY]]                  Day name
+                                    → Friday
+
+   [[CURRENT_DAY_NUM]]              Day number
+                                    → 21
+
+   [[CURRENT_MONTH]]                Month name
+                                    → March
+
+   [[CURRENT_MONTH_NUM]]            Month number
+                                    → 03
+
+   [[CURRENT_YEAR]]                 Full year
+                                    → 2026
+
+   [[CURRENT_YEAR_SHORT]]           Short year
+                                    → 26
+
+   [[TIMESTAMP]]                    Unix timestamp
+                                    → 1774312530
+
+   [[TIMESTAMP_HEX]]                Hex timestamp
+                                    → 69D3A1F2
+
+   [[FUTURE_DATE(N)]]               N days in the future
+                                    → [[FUTURE_DATE(7)]] → 03/28/2026
+
+   [[PAST_DATE(N)]]                 N days in the past
+                                    → [[PAST_DATE(3)]] → 03/18/2026
+
+
+================================================================================
+   3. RANDOM STRINGS & NUMBERS (parameterized)
+================================================================================
+
+   [[RANDOM_NUM(N)]]                N-digit random number
+                                    → [[RANDOM_NUM(6)]] → 384729
+
+   [[RANDOM_NUM4]]                  4-digit number (shorthand)
+                                    → 8472
+
+   [[RANDOM_NUM6]]                  6-digit number (shorthand)
+                                    → 384729
+
+   [[RANDOM_NUMBER10]]              10-digit number
+                                    → 3847291056
+
+   [[RANDOM_STR(N)]]                N-char lowercase string
+                                    → [[RANDOM_STR(8)]] → xkmbjplq
+
+   [[RANDOM_STR_UPPER(N)]]          N-char uppercase string
+                                    → [[RANDOM_STR_UPPER(8)]] → XKMBJPLQ
+
+   [[RANDOM_MIX(N)]]                N-char mixed alphanumeric
+                                    → [[RANDOM_MIX(12)]] → xK9mB2pL4qR7
+
+   [[RANDOM_STRING]]                12-char mixed (shorthand)
+                                    → xK9mB2pL4qR7
+
+   [[RANDOM_STR8]]                  8-char lowercase (shorthand)
+                                    → xkmbjplq
+
+   [[RANDOM_HEX(N)]]                N-char hex string
+                                    → [[RANDOM_HEX(8)]] → a3f2c1b9
+
+   [[RANDOM_HEX8]]                  8-char hex (shorthand)
+                                    → a3f2c1b9
+
+   [[RANDOM_MD5]]                   Full MD5 hash (lowercase)
+                                    → d41d8cd98f00b204e9800998ecf8427e
+
+   [[RANDOM_MD5_UPPER]]             Full MD5 hash (uppercase)
+                                    → D41D8CD98F00B204E9800998ECF8427E
+
+   [[RANDOM_UUID]]                  Full UUID
+                                    → 550e8400-e29b-41d4-a716-446655440000
+
+   [[RANDOM_UUID_SHORT]]            First 8 chars of UUID
+                                    → 550e8400
+
+   [[RANDOM_PHONE]]                 Random US phone number
+                                    → +1-555-384-7291
+
+   [[RANDOM_PATH]]                  Random URL path
+                                    → /docs/ref/xkmbjplq
+
+
+================================================================================
+   4. RANDOM NAMES (multi-region, 500+ embedded)
+================================================================================
+
+   [[RANDOM_FULLNAME]]              Any region full name
+                                    → David Chen | Hans Müller | Yuki Tanaka
+
+   [[RANDOM_FIRSTNAME]]             Any region first name
+                                    → David | Pierre | Sakura
+
+   [[RANDOM_LASTNAME]]              Any region last name
+                                    → Chen | Müller | Watanabe
+
+   [[RANDOM_US_FULLNAME]]           American full name
+                                    → Michael Johnson
+
+   [[RANDOM_US_FIRSTNAME]]          American first name
+                                    → Michael
+
+   [[RANDOM_US_LASTNAME]]           American last name
+                                    → Johnson
+
+   [[RANDOM_EUROPEAN_FULLNAME]]     European full name (DE/FR/IT/ES/Nordic)
+                                    → Hans Müller | Pierre Dupont
+
+   [[RANDOM_EUROPEAN_FIRSTNAME]]    European first name
+                                    → Wolfgang | François | Marco
+
+   [[RANDOM_EUROPEAN_LASTNAME]]     European last name
+                                    → Schmidt | Moreau | Rossi
+
+   [[RANDOM_ASIAN_FULLNAME]]        Asian full name (JP/CN/KR/IN)
+                                    → Tanaka Yuki | Wang Wei | Kim Min-jun
+
+   [[RANDOM_ASIAN_FIRSTNAME]]       Asian first name
+                                    → Yuki | Wei | Priya
+
+   [[RANDOM_ASIAN_LASTNAME]]        Asian last name
+                                    → Tanaka | Wang | Patel
+
+   [[RANDOM_UK_FULLNAME]]           British full name
+                                    → James Patterson | Olivia Clarke
+
+   [[RANDOM_LATIN_FULLNAME]]        Latin American full name
+                                    → Carlos García | Valentina Silva
+
+   [[RAND-NAMES]]                   Same as [[RANDOM_FULLNAME]]
+                                    → Emily Walker
+
+
+================================================================================
+   5. RANDOM COMPANIES (200+ embedded, multi-region)
+================================================================================
+
+   [[RANDOM_COMPANY]]               Any region company
+                                    → Sony Corporation | Siemens AG
+
+   [[RANDOM_US_COMPANY]]            American company
+                                    → Goldman Sachs | Apple Inc.
+
+   [[RANDOM_EUROPEAN_COMPANY]]      European company
+                                    → BMW Group | LVMH | Nestlé
+
+   [[RANDOM_ASIAN_COMPANY]]         Asian company (JP/CN/KR/IN)
+                                    → Toyota Motor | Samsung Electronics
+
+   [[RANDOM_UK_COMPANY]]            British company
+                                    → HSBC Holdings | AstraZeneca
+
+   [[RANDOM_COMPANY_SUFFIX]]        Company suffix only
+                                    → Inc. | Ltd. | GmbH | AG | S.A.
+
+   [[FAKE_COMPANY_EMAIL]]           Fake corporate email
+                                    → support@nexgen-solutions.com
+
+   [[FAKE_COMPANY_EMAIL_AND_FULLNAME]]  Full name + corporate email
+                                    → David Chen <david.chen@pinnacle-networks.com>
+
+    [[LINK]]                        → AutoGrab Link From link.txt file
+
+
+
+================================================================================
+   6. RANDOM LOCATIONS & COUNTRIES (190+ countries, 200+ cities)
+================================================================================
+
+   [[RANDOM_COUNTRY]]               Random country name
+                                    → Japan | Germany | Brazil
+
+   [[RANDOM_COUNTRY_CODE]]          Random ISO country code
+                                    → JP | DE | BR
+
+   [[RANDOM_CITY]]                  Random city (any region)
+                                    → Tokyo | Berlin | São Paulo
+
+   [[RANDOM_US_CITY]]               American city
+                                    → Chicago | San Francisco | Miami
+
+   [[RANDOM_EUROPEAN_CITY]]         European city
+                                    → London | Paris | Stockholm
+
+   [[RANDOM_ASIAN_CITY]]            Asian city
+                                    → Tokyo | Shanghai | Seoul | Mumbai
+
+   [[RANDOM_LATIN_CITY]]            Latin American city
+                                    → São Paulo | Buenos Aires | Mexico City
+
+   [[RANDOM_ADDRESS]]               Full random US-style address
+                                    → 4872 Johnson Ave., San Francisco
+
+   [[DOMAIN_FAVICON]]               Favicon URL for recipient domain
+                                    → https://gmail.com/favicon.ico
+
+
+================================================================================
+   7. REFERENCE & TRACKING IDs (perfect for subjects & letters)
+================================================================================
+
+   [[REF_NUMBER]]                   Invoice/reference number
+                                    → INV-2026-384729
+
+   [[TICKET_ID]]                    Support ticket ID
+                                    → TKT-8472-XK9M
+
+   [[CASE_ID]]                      Case number
+                                    → CASE-2026-03-8472
+
+   [[ORDER_ID]]                     Order number
+                                    → ORD-384729-2026
+
+   [[TRANSACTION_ID]]               Transaction ID
+                                    → TXN-A3F2C1B9
+
+   [[TRACKING_NUM]]                 Shipping tracking number
+                                    → 1Z999AA10123456784
+
+   [[CONFIRMATION_CODE]]            Booking/confirmation code
+                                    → BK-XK9M-2026
+
+
+================================================================================
+   8. SENDER EMAIL PLACEHOLDERS (for fromEmail.txt)
+================================================================================
+
+   [[SENDER_RANDOM_STRING]]         8-char safe random string
+                                    → xk9mb2pl
+
+   [[SENDER_RANDOM_STRING(N)]]      N-char safe random string
+                                    → [[SENDER_RANDOM_STRING(12)]] → xk9mb2pl4qr7
+
+   [[SENDER_RANDOM_NUM(N)]]         N-digit random number
+                                    → [[SENDER_RANDOM_NUM(6)]] → 384729
+
+   [[SENDER_UUID]]                  Short UUID (8 chars)
+                                    → 550e8400
+
+   [[SENDER_SAFE_DATE]]             Date safe for email (YYYYMMDD)
+                                    → 20260321
+
+   [[SENDER_TIMESTAMP]]             Unix timestamp
+                                    → 1774312530
+
+   EXAMPLE fromEmail.txt:
+   ──────────────────────────────────────────────────
+   support+[[SENDER_RANDOM_STRING(6)]]@[[RECIPIENTDOMAIN]]
+   billing+[[SENDER_UUID]]+[[CURRENT_YEAR_SHORT]]@[[RECIPIENTDOMAIN]]
+   noreply+[[RECIPIENT_DOMAIN_INITIAL]]+[[SENDER_SAFE_DATE]]@[[RECIPIENTDOMAIN]]
+   security+[[RECIPIENT_EMAIL_HASH4]]+alert@[[RECIPIENTDOMAIN]]
+   admin+[[SENDER_RANDOM_NUM(6)]]@dedicatedpowermtamail.com
+
+
+================================================================================
+   9. ENCODING & TRANSFORM
+================================================================================
+
+   [[BASE64_ENCODE(text)]]          Encode any text to Base64
+                                    → [[BASE64_ENCODE(welcome)]] → d2VsY29tZQ==
+
+   [[BASE64_DECODE(text)]]          Decode Base64 to text
+                                    → [[BASE64_DECODE(d2VsY29tZQ==)]] → welcome
+
+   [[UPPERCASE(text)]]              Convert to uppercase
+                                    → [[UPPERCASE(hello world)]] → HELLO WORLD
+
+   [[LOWERCASE(text)]]              Convert to lowercase
+                                    → [[LOWERCASE(HELLO)]] → hello
+
+   [[CAPITALIZE(text)]]             Capitalize each word
+                                    → [[CAPITALIZE(hello world)]] → Hello World
+
+
+================================================================================
+   USAGE EXAMPLES
+================================================================================
+
+   SUBJECT LINE:
+   ──────────────────────────────────────────────────
+   Payment Confirmation #[[REF_NUMBER]] - [[CURRENT_DATE_LONG]]
+   Action Required: Verify Account [[RECIPIENT_EMAIL_HASH4]] - [[CURRENT_FULL_DATE]]
+   [[RANDOM_COMPANY]] - Invoice #[[ORDER_ID]] for [[RECIPIENT_NAME]]
+   Security Alert - [[TICKET_ID]] - [[CURRENT_FULL_DATETIME]]
+
+   HTML TEMPLATE:
+   ──────────────────────────────────────────────────
+   Dear [[RECIPIENT_FIRST]],
+
+   Your transaction [[TRANSACTION_ID]] was processed on [[CURRENT_FULL_DATE]]
+   by [[RANDOM_COMPANY]] from [[RANDOM_EUROPEAN_CITY]], [[RANDOM_COUNTRY]].
+
+   Reference: [[REF_NUMBER]]
+   Amount: $[[RANDOM_NUM(4)]].[[RANDOM_NUM(2)]]
+   Contact: [[FAKE_COMPANY_EMAIL]]
+
+   FROM EMAIL:
+   ──────────────────────────────────────────────────
+   billing+[[SENDER_RANDOM_NUM(6)]]@[[RECIPIENTDOMAIN]]
+   support+[[SENDER_UUID]]+[[RECIPIENT_EMAIL_HASH4]]@[[RECIPIENTDOMAIN]]
+
+   SENDER NAME:
+   ──────────────────────────────────────────────────
+   [[RANDOM_FULLNAME]] - [[RANDOM_COMPANY]]
+   [[RANDOM_US_FULLNAME]] | Accounts Department
+   [[RECIPIENT_DOMAIN_NAME]] Security Team
+
+================================================================================
+   TOTAL: 96 [[DOUBLE_BRACKET]] placeholders across 9 categories
+   All names, companies, cities, countries EMBEDDED — no external files needed
+   No legacy {CURLY} tags — [[STYLE]] only
+================================================================================

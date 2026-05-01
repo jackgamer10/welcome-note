@@ -1,9 +1,1 @@
-[[RANDOM_FULLNAME]]
-[[RANDOM_COMPANY]] - Billing
-[[RECIPIENT_DOMAIN_NAME]] Security Team
-[[RANDOM_US_FULLNAME]] | Accounts
-Support Desk
-Service Center - [[RANDOM_STR:4]]
-[[RANDOM_EUROPEAN_FULLNAME]]
-Notification System
-[[RANDOM_COMPANY]] Administrator
+Docusign via Docusign

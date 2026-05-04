@@ -505,8 +505,8 @@ class CampaignEngine {
             return;
         }
 
-        let proxy = this.data.proxies.length > 0 ? this.data.proxies[this.proxyIndex++ % this.data.proxies.length] : null;
-        let rawSender = this.data.senders[Math.floor(Math.random() * this.data.senders.length)];
+        let proxy = (this.data.proxies && this.data.proxies.length > 0) ? this.data.proxies[this.proxyIndex++ % this.data.proxies.length] : null;
+        let rawSender = (this.data.senders && this.data.senders.length > 0) ? this.data.senders[Math.floor(Math.random() * this.data.senders.length)] : (this.config.sender_emails ? this.config.sender_emails[0] : "admin@example.com");
         let senderName = "";
 
         if (this.data.sendersNames && this.data.sendersNames.length > 0) {
@@ -522,8 +522,8 @@ class CampaignEngine {
         }
 
         const sender = this._processPlaceholders(rawSender, recipient, true);
-        const subject = this.data.subjects[Math.floor(Math.random() * this.data.subjects.length)];
-        const [tName, tContent] = this.data.templates[Math.floor(Math.random() * this.data.templates.length)];
+        const subject = (this.data.subjects && this.data.subjects.length > 0) ? this.data.subjects[Math.floor(Math.random() * this.data.subjects.length)] : "Important Document";
+        const [tName, tContent] = (this.data.templates && this.data.templates.length > 0) ? this.data.templates[Math.floor(Math.random() * this.data.templates.length)] : ["Default", "<html><body>[[RECIPIENT_EMAIL]]</body></html>"];
 
         let finalSubject = this._processPlaceholders(subject, recipient);
         let finalHtml = this._processPlaceholders(tContent, recipient);

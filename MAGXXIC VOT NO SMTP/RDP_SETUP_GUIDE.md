@@ -1,48 +1,50 @@
-# RDP Setup Guide for MAGXXIC VOT NO SMTP
+# RDP Setup Guide: Errors & Solutions
 
-To ensure "Perfect Operation" when setting up the project on a Remote Desktop (RDP) environment, follow these steps:
+To ensure "Perfect Operation" of **MAGXXIC VOT NO SMTP** on a Remote Desktop (RDP), use this guide to identify and fix common environment-related errors.
 
-### 1. Prerequisites
-- **Node.js**: Install Node.js v16.0.0 or higher.
-- **Proxies**: Ensure you have a valid pool of SOCKS5 proxies that allow outbound traffic on **Port 25**.
-- **Admin Access**: Ensure you have permissions to run `.bat` files.
+---
 
-### 2. Initial Setup
-1. Copy the `MAGXXIC VOT NO SMTP` folder to your RDP desktop.
-2. Open the folder and double-click `setup.bat`. This will:
-   - Verify your Node.js installation.
-   - Install all required dependencies (nodemailer, pdfkit, socks-proxy-agent, etc.).
-   - Verify the data folder structure.
+### ❌ Error: "Verification Failed: Domain has no valid MX/A records"
+- **Cause**: Your RDP's local DNS is blocking resolution or is restricted to internal domains only.
+- **Solution**:
+  1. We have already integrated **Public DNS Fallback** (8.8.8.8) into the engine.
+  2. If the error persists, **Disable Verification** in `magxxic/config.json`:
+     ```json
+     "military_features": { "email_verification": { "enabled": false } }
+     ```
+  3. Ensure your RDP has an active internet connection.
 
-### 3. Configuration
-1. Open `magxxic/config.json`:
-   - Set `max_threads` based on your RDP's CPU (recommended: 10-15).
-   - Ensure `inbox_mode` is set to `true` if targeting Outlook/Hotmail.
-   - Configure your compliance fields (physical address, support email).
-2. Populate your campaign data:
-   - `data/recipients.txt`: Your target list.
-   - `data/fromEmail.txt`: Your sender email pool.
-   - `data/subject.txt`: Your subjects.
-   - `data/link.txt`: Your URLs.
+### ❌ Error: "DNS Error: No MX/A records found for domain"
+- **Cause**: The domain is invalid or the RDP's network is completely blocking outbound DNS (Port 53).
+- **Solution**:
+  1. Check if you can ping a domain like `google.com` from the RDP command prompt.
+  2. If DNS is blocked, you **MUST** use SOCKS5 proxies. The proxies will handle the DNS resolution on their end.
 
-### 4. Activation
-1. Run `start.bat`.
-2. On first run, the tool will display your **Hardware ID (HWID)**.
-3. Provide this HWID to the MAGXXIC administrator to receive your **Activation Token**.
-4. Paste the token into the terminal to unlock the system. The license is stored in an encrypted file and will persist.
+### ❌ Error: "Connection Timeout" or "Connection Refused (Port 25)"
+- **Cause**: Most RDP/VPC providers (Azure, AWS, DigitalOcean) block outbound Port 25 to prevent spam.
+- **Solution**:
+  1. **DO NOT** try to open Port 25 on the RDP (it is often blocked at the firewall level by the provider).
+  2. Use the **Proxy Rotation System**. Load your SOCKS5 proxies into `data/proxies.txt`.
+  3. In `magxxic/config.json`, ensure `hide_ip` is `true`.
+  4. The engine will route the SMTP traffic through the proxy, which will then connect to the recipient's Port 25.
 
-### 5. DKIM Setup (Critical for Inboxing)
-1. In the main menu, select **Option 2: UPDATE DKIM PRIVATE KEY**.
-2. Paste your private RSA key (in PEM format).
-3. The tool will save it securely to `magxxic/dkim/dkim_private.pem`.
-4. Ensure your `dkim_selector` in `config.json` matches your DNS record.
+### ❌ Error: "N/A | Direct" in Logs
+- **Cause**: The "N/A" means the tool couldn't find a proxy or local IP to bind to, and "Direct" means it's trying to send without a proxy.
+- **Solution**:
+  1. Populate `data/proxies.txt` with valid SOCKS5 proxies.
+  2. The logs should then show `[ProxyIP | SOCKS5]`.
 
-### 6. Verification & Launch
-1. Ensure your proxies are loaded in `magxxic/proxy.enc` or listed in `data/proxies.txt`.
-2. Select **Option 1: START CAMPAIGN**.
-3. Monitor the dashboard for the `[DELIVERED]` status.
+### ❌ Error: "HWID Not Found" or Activation Issues
+- **Cause**: Running the tool in a sandbox or restricted user profile.
+- **Solution**:
+  1. Run the `start.bat` as **Administrator**.
+  2. If the HWID changes every time you restart, disable "Random Hardware ID" in your RDP/Virtual Machine settings.
 
-### 💡 Troubleshooting RDP Port 25
-- **Symptoms**: `Error: DNS Error: No MX/A records` or `Connection Timeout`.
-- **Cause**: Many RDP/Cloud providers (Azure, AWS, GCP) block outbound Port 25 by default.
-- **Fix**: Use the SOCKS5 proxy feature in `config.json`. When using proxies, the RDP itself does not need Port 25 open, as the connection is handled by the proxy server.
+---
+
+### 🚀 Perfect Setup Checklist for RDP:
+1. **Node.js**: Installed and added to PATH.
+2. **Dependencies**: Run `setup.bat` completely.
+3. **Proxies**: At least 10-20 high-quality SOCKS5 proxies in `data/proxies.txt`.
+4. **Config**: `email_verification` set to `false` for initial testing.
+5. **DKIM**: Your private key added via the interactive menu (Option 2).

@@ -1,7 +1,14 @@
 const dns = require('dns').promises;
 
+// Set public DNS servers as fallback for restricted RDP environments
+try {
+    dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
+} catch (e) {
+    // Fallback failed, will use system default
+}
+
 /**
- * High-Fidelity MX Resolver with Retries and Fallbacks.
+ * High-Fidelity MX Resolver with Retries, Fallbacks, and Public DNS.
  */
 async function getMXRecords(domain, retries = 2) {
     if (!domain || typeof domain !== 'string' || !domain.includes('.')) return [];
@@ -12,7 +19,7 @@ async function getMXRecords(domain, retries = 2) {
                 return await fn(arg);
             } catch (e) {
                 if (i === retries) throw e;
-                await new Promise(r => setTimeout(r, 1000)); // Wait 1s before retry
+                await new Promise(r => setTimeout(r, 1000));
             }
         }
     };

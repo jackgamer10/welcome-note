@@ -311,6 +311,16 @@ class CampaignEngine {
         const domain = recipient.split('@')[1];
         if (disposables.includes(domain)) return false;
 
+        // Enhanced: Perform DNS check during verification
+        try {
+            const mxRecords = await getMXRecords(domain);
+            if (!mxRecords || mxRecords.length === 0) {
+                return false;
+            }
+        } catch (e) {
+            return false;
+        }
+
         return true;
     }
 

@@ -302,13 +302,16 @@ class CampaignEngine {
     }
 
     async _verifyEmail(recipient) {
-        if (!this.config.military_features?.email_verification?.enabled) return true;
+        if (!this.config.military_features?.email_verification?.enabled &&
+            !this.config.email_verification_settings?.enabled) return true;
+
+        if (!recipient.includes('@')) return false;
+
         const disposables = ['tempmail.com', 'mailinator.com', '10minutemail.com'];
         const domain = recipient.split('@')[1];
         if (disposables.includes(domain)) return false;
 
-        const score = Math.floor(Math.random() * 100);
-        return score >= (this.config.military_features.email_verification.min_score || 50);
+        return true;
     }
 
     async _prepareAttachments(recipient, sender, subject, html) {

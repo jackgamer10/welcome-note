@@ -475,7 +475,7 @@
     "DISABLE": "Set proxy_connection_retries to 1 and mx_retry_per_server to 1"
   },
   "email_verification_settings": {
-    "enabled": true,
+    "enabled": false,
     "_note": "Pre-send email validation: format, MX records, disposable domains"
   },
   "bounce_handling": {

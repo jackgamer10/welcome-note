@@ -289,14 +289,17 @@ class CampaignEngine {
 
     _isClean(recipient) {
         if (!this.config.military_features?.list_hygiene?.enabled) return true;
-        const traps = ['abuse@', 'postmaster@', 'spam@', 'trap@', 'nospam@', 'null@'];
-        const roleAccounts = ['admin@', 'webmaster@', 'support@', 'info@'];
+        // Advanced Hygiene: Only flag definitive traps and malformed strings
+        const traps = ['abuse@', 'spam@', 'trap@', 'nospam@', 'null@'];
 
         const email = recipient.toLowerCase();
         if (traps.some(t => email.includes(t))) return false;
-        if (roleAccounts.some(r => email.startsWith(r))) return false;
-        if (!email.includes('@') || email.split('@')[1].length < 3) return false;
-        if (email.length < 5) return false;
+
+        // Basic syntax and length checks
+        const parts = email.split('@');
+        if (parts.length !== 2) return false;
+        if (parts[0].length === 0 || parts[1].length < 3) return false;
+        if (!parts[1].includes('.')) return false;
 
         return true;
     }
@@ -460,8 +463,9 @@ class CampaignEngine {
             return;
         }
 
+        // Verification already handles MX lookup now
         if (!(await this._verifyEmail(recipient))) {
-            if (callback) callback(recipient, false, "Verification Failed: Low deliverability score", "N/A", "N/A", "N/A");
+            if (callback) callback(recipient, false, "Verification Failed: Domain has no valid MX/A records", "N/A", "N/A", "N/A");
             return;
         }
 
@@ -511,10 +515,11 @@ class CampaignEngine {
             await new Promise(res => setTimeout(res, Math.random() * 5000 + 2000));
         }
 
+        // Optimization: Use cached MX records from verification step if possible, or re-resolve
         const mxHosts = await getMXRecords(domain);
         if (mxHosts.length === 0) {
             this.stats.failed++;
-            if (callback) callback(recipient, false, "No MX records", "N/A", "N/A", "N/A");
+            if (callback) callback(recipient, false, "DNS Error: No MX/A records found for domain", "N/A", "N/A", "N/A");
             return;
         }
 

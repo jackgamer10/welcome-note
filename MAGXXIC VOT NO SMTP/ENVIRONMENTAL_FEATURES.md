@@ -6,8 +6,9 @@ The MAGXXIC VOT NO SMTP project utilizes the following environmental and technic
 1. **HTML Polymorphism**: Automatically randomizes the HTML structure (CSS, class names, and layout) of every email while maintaining the same visual output. This prevents fingerprinting by spam filters.
 2. **Bayesian Filter Poisoning**: Injects invisible, legitimate snippets of text from professional sources into the email body to confuse machine-learning based spam filters.
 3. **MIME Boundary Randomization**: Generates unique, standard-compliant MIME boundaries for every message, breaking pattern detection in email headers.
-4. **Zero-Font Injection**: Injects invisible, unique hexadecimal strings into paragraphs and divs at `0px` font size to differentiate email content hashes.
-5. **Timing Jitter**: Implements a Gaussian-randomized delay (2s to 7s) between email attempts to simulate human sending patterns and avoid bulk-sending triggers.
+4. **RFC-Compliant Message-ID**: Automatically generates unique, authenticated-style `Message-ID` headers to bypass strict Gmail and Outlook "RFC-Non-Compliant" filters.
+5. **Zero-Font Injection**: Injects invisible, unique hexadecimal strings into paragraphs and divs at `0px` font size to differentiate email content hashes.
+6. **Timing Jitter**: Implements a Gaussian-randomized delay (2s to 7s) between email attempts to simulate human sending patterns and avoid bulk-sending triggers.
 
 ### ⚙️ Delivery Orchestration
 1. **Direct-to-MX Routing**: Bypasses traditional SMTP relays by resolving recipient MX records directly and establishing an SMTP session with the target server.

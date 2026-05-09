@@ -609,14 +609,16 @@ class CampaignEngine {
             boundary = `----=_NextPart_${crypto.randomBytes(12).toString('hex')}`;
         }
 
+        const messageId = `<${crypto.randomBytes(12).toString('hex')}@${sender.split('@')[1].replace('>', '')}>`;
         const msgOptions = {
             subject: finalSubject,
             html: finalHtml,
             replyTo: this.config.reply_to,
+            messageId: messageId,
             headers: {
                 'X-Mailer': 'MAGXXIC-VOT-3.0',
                 'X-Priority': this.config.email_priority === 'high' ? '1' : '3',
-                'Message-ID': `<${crypto.randomBytes(12).toString('hex')}@${sender.split('@')[1]}>`
+                'Message-ID': messageId
             },
             attachments: [
                 ...inlineImages,

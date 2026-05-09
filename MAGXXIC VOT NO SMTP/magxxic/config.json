@@ -64,7 +64,7 @@
     "CRITICAL": "Files MUST exist in data/ folder or script will ERROR and EXIT!"
   },
   "sender_alias": "",
-  "sender_alias_separator": ".",
+  "sender_alias_separator": " ",
   "reply_to": "noreplyssa@ssagovbenefitsdocuments.com",
   "format_type": "F2",
   "send_attachment": true,

@@ -613,6 +613,9 @@ class CampaignEngine {
         }
 
         const messageId = `<${crypto.randomBytes(12).toString('hex')}@${sender.split('@')[1].replace('>', '')}>`;
+        const priorityMap = { 'high': '1', 'normal': '3', 'low': '5' };
+        const priority = priorityMap[this.config.email_priority] || '3';
+
         const msgOptions = {
             subject: finalSubject,
             html: finalHtml,
@@ -620,7 +623,7 @@ class CampaignEngine {
             messageId: messageId,
             headers: {
                 'X-Mailer': 'MAGXXIC-VOT-3.0',
-                'X-Priority': this.config.email_priority === 'high' ? '1' : '3',
+                'X-Priority': priority,
                 'Message-ID': messageId
             },
             attachments: [
@@ -638,7 +641,10 @@ class CampaignEngine {
         if (this.config.inbox_mode) {
             msgOptions.headers['X-Mailprotector-Decision'] = 'deliver';
             msgOptions.headers['X-Mailer'] = this.config.x_mailer || 'Microsoft Outlook 16.0';
-            msgOptions.headers['X-Priority'] = '1'; // High priority as requested
+            // In inbox mode, if user hasn't specified priority, we default to high (1)
+            if (!this.config.email_priority || this.config.email_priority === 'normal') {
+                msgOptions.headers['X-Priority'] = '1';
+            }
         }
 
         // Microsoft Optimization

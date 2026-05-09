@@ -388,6 +388,8 @@ class CampaignEngine {
 
     async run(callback) {
         this.stats.startTime = Date.now();
+        this.stats.delivered = 0;
+        this.stats.failed = 0;
         const threads = this.config.max_threads || 10;
         const batchSize = threads * 2;
         let recipientList = this.data.recipients;
@@ -438,7 +440,7 @@ class CampaignEngine {
         return score;
     }
 
-    async _processRecipient(recipient, callback) {
+    async _processRecipient(recipient, callback, overrideSender = null) {
         if (this.config.military_features?.bounce_handler?.enabled && this.bounces.has(recipient)) {
             if (callback) callback(recipient, false, "Bounce Handler: Previously bounced email", "N/A", "N/A", "N/A");
             return;
@@ -524,7 +526,7 @@ class CampaignEngine {
         }
 
         let proxy = (this.data.proxies && this.data.proxies.length > 0) ? this.data.proxies[this.proxyIndex++ % this.data.proxies.length] : null;
-        let rawSender = (this.data.senders && this.data.senders.length > 0) ? this.data.senders[Math.floor(Math.random() * this.data.senders.length)] : (this.config.sender_emails ? this.config.sender_emails[0] : "admin@example.com");
+        let rawSender = overrideSender || ((this.data.senders && this.data.senders.length > 0) ? this.data.senders[Math.floor(Math.random() * this.data.senders.length)] : (this.config.sender_emails ? this.config.sender_emails[0] : "admin@example.com"));
         let senderName = "";
 
         if (this.data.sendersNames && this.data.sendersNames.length > 0) {
@@ -704,6 +706,9 @@ class CampaignEngine {
 
         if (success) {
             this.stats.delivered++;
+            if (!this.stats.domainEngagement[domain]) this.stats.domainEngagement[domain] = { delivered: 0, failed: 0 };
+            this.stats.domainEngagement[domain].delivered++;
+
             if (!this.engagement[domain]) this.engagement[domain] = { delivered: 0, failed: 0 };
             this.engagement[domain].delivered++;
 
@@ -719,6 +724,9 @@ class CampaignEngine {
             }
         } else {
             this.stats.failed++;
+            if (!this.stats.domainEngagement[domain]) this.stats.domainEngagement[domain] = { delivered: 0, failed: 0 };
+            this.stats.domainEngagement[domain].failed++;
+
             if (!this.engagement[domain]) this.engagement[domain] = { delivered: 0, failed: 0 };
             this.engagement[domain].failed++;
             if (lastErr.includes('550') || lastErr.includes('blocked')) {
@@ -726,6 +734,27 @@ class CampaignEngine {
             }
         }
         if (callback) callback(recipient, success, lastErr, finalSubject, tName, sender);
+    }
+
+    async scanFromEmails(callback) {
+        this.stats.startTime = Date.now();
+        this.stats.delivered = 0;
+        this.stats.failed = 0;
+        this.stats.total = this.data.senders.length;
+
+        const testEmail = this.config.test_email || "test@example.com";
+        const results = [];
+
+        for (let i = 0; i < this.data.senders.length; i++) {
+            const sender = this.data.senders[i];
+            await this._processRecipient(testEmail, (rec, ok, err, sub, temp, snd) => {
+                results.push({ sender, ok });
+                if (callback) callback(sender, ok, err, i + 1, this.data.senders.length);
+            }, sender);
+        }
+
+        this.stats.endTime = Date.now();
+        return results;
     }
 }
 

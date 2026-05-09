@@ -647,6 +647,16 @@ class CampaignEngine {
             }
         }
 
+        if (this.config.hide_ip) {
+            // Obfuscate source IP via forged relay headers
+            const hop1 = `${crypto.randomBytes(4).toString('hex')}.magxxic.internal`;
+            const hop2 = `mx.google.com`;
+            msgOptions.headers['Received'] = [
+                `from ${hop1} (localhost [127.0.0.1]) by ${hop2} with ESMTPS id ${crypto.randomBytes(12).toString('hex')}; ${new Date().toUTCString()}`,
+                `from mta-relay.magxxic.local (unknown [${(proxy || "10.0.0.1").split('@').pop().split(':')[0]}]) by ${hop1} with ESMTP; ${new Date().toUTCString()}`
+            ];
+        }
+
         // Microsoft Optimization
         if (this.config.microsoft_optimization?.enabled) {
             msgOptions.headers['X-MS-Exchange-Organization-AuthAs'] = 'Internal';

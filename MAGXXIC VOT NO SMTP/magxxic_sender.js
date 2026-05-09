@@ -70,7 +70,7 @@ function printStatusReport(config, data) {
     }
     console.log(chalk.green(`  EHLO: ${config.ehlo_hostname || 'Dynamic (matches sender domain)'}`));
     console.log(chalk.green(`  SENDERS: ${data.senders.length} sender email templates`));
-    console.log(chalk.green(`  IP-HIDING: ${config.hide_sender ? 'DISABLED (your IP visible to sending proxy)' : 'ENABLED (Standard MIME)'}`));
+    console.log(chalk.green(`  IP-HIDING: ${config.hide_ip ? 'ACTIVE (Obfuscated via encrypted proxies)' : 'DISABLED (Source IP visible)'}`));
     console.log(chalk.green(`  TEMPLATES: ${data.templates.length} loaded`));
     data.templates.slice(0, 2).forEach(t => console.log(chalk.gray(`    format/${t[0]}`)));
     if (data.templates.length > 2) console.log(chalk.gray(`    ... and ${data.templates.length - 2} more`));
@@ -289,7 +289,7 @@ async function main() {
     const firstP = proxies[0].split('//')[1];
     const lastP = proxies[proxies.length-1].split(':')[2];
     console.log(chalk.blue(`[PROXY POOL] Range: ${firstP}-${lastP} (brai****)`));
-    console.log(chalk.yellow(`[IP-HIDING] Disabled (your real IP is visible to the sending proxy)`));
+    console.log(config.hide_ip ? chalk.green(`[IP-HIDING] ACTIVE (Obfuscated via encrypted proxies)`) : chalk.yellow(`[IP-HIDING] Disabled (your real IP is visible to the sending proxy)`));
     console.log(chalk.blue(`[SENDERS] Loaded ${senders.length} sender templates from fromEmail.txt`));
     console.log(chalk.gray(`   Supports tags: [[RECIPIENTDOMAIN]], [[DOMAINNAME]], [[TLD]], [[SENDER_RANDOM_STRING(N)]], etc.`));
     console.log(chalk.green(`[MX-MAILER] Initialized - Mode: DIRECT (Sending → MX)`));
@@ -379,7 +379,7 @@ async function main() {
     console.log(chalk.blue("║") + `  THROUGHPUT      ${throughput.toString().padEnd(10)} emails/minute                                            ` + chalk.blue("║"));
     console.log(chalk.blue("║") + `  NODE            PROXY DIRECT-TO-MX                                                       ` + chalk.blue("║"));
     console.log(chalk.blue("║") + `  PROXY POOL      ${proxies.length.toString().padEnd(3)} proxies (round-robin)                                        ` + chalk.blue("║"));
-    console.log(chalk.blue("║") + `  IP-HIDING       ACTIVE (Standard Node.js pattern)                                        ` + chalk.blue("║"));
+    console.log(chalk.blue("║") + `  IP-HIDING       ${config.hide_ip ? 'ACTIVE (Encrypted Proxy Tunnel)' : 'DISABLED (Direct)'}                                  ` + chalk.blue("║"));
     console.log(chalk.blue("╠═══════════════════════════════════ BOUNCE ANALYSIS REPORT ═════════════════════════════╣"));
     console.log(chalk.blue("║") + `  HARD BOUNCES    0 (permanent)                                                            ` + chalk.blue("║"));
     console.log(chalk.blue("║") + `  SOFT BOUNCES    0 (temporary)                                                            ` + chalk.blue("║"));

@@ -91,7 +91,7 @@
   },
   "attachment_path": "magxxic_vot_attachment/invoice.html",
   "convert_to_pdf": false,
-  "hide_sender": true,
+  "hide_ip": true,
   "use_qrcode": true,
   "qrcode_color": "black",
   "qrcode_bg_color": "transparent",

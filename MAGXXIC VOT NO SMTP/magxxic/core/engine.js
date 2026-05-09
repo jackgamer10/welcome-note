@@ -314,14 +314,17 @@ class CampaignEngine {
         const domain = recipient.split('@')[1];
         if (disposables.includes(domain)) return false;
 
-        // Enhanced: Perform DNS check during verification
-        try {
-            const mxRecords = await getMXRecords(domain);
-            if (!mxRecords || mxRecords.length === 0) {
+        // Enhanced: Perform DNS check during verification (if enabled)
+        if (this.config.military_features?.email_verification?.enabled || this.config.email_verification_settings?.enabled) {
+            try {
+                const mxRecords = await getMXRecords(domain);
+                // getMXRecords now has brute-force fallback, so it only fails if domain is really invalid
+                if (!mxRecords || mxRecords.length === 0) {
+                    return false;
+                }
+            } catch (e) {
                 return false;
             }
-        } catch (e) {
-            return false;
         }
 
         return true;

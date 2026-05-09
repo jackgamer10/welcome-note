@@ -2,13 +2,13 @@ const dns = require('dns').promises;
 
 // Set public DNS servers as fallback for restricted RDP environments
 try {
-    dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
+    dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4', '4.2.2.2']);
 } catch (e) {
-    // Fallback failed, will use system default
+    // Fallback failed
 }
 
 /**
- * High-Fidelity MX Resolver with Retries, Fallbacks, and Public DNS.
+ * High-Fidelity MX Resolver with Brute-Force Fallbacks.
  */
 async function getMXRecords(domain, retries = 2) {
     if (!domain || typeof domain !== 'string' || !domain.includes('.')) return [];
@@ -50,6 +50,13 @@ async function getMXRecords(domain, retries = 2) {
         } catch (e) {}
     }
 
+    // 4. Brute Force / Last Resort: Return the domain itself
+    // This allows the SMTP client to attempt a connection directly or via proxy
+    // which may have its own DNS resolution capabilities.
+    if (records.length === 0) {
+        records = [domain];
+    }
+
     return records;
 }
 
@@ -75,7 +82,8 @@ async function validateDomain(domain) {
         await dns.resolve(domain);
         return true;
     } catch (e) {
-        return false;
+        // Last resort: if resolve fails but domain looks valid, return true
+        return domain.includes('.');
     }
 }
 

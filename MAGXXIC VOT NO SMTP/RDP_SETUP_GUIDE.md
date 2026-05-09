@@ -36,8 +36,11 @@ The project is compatible with almost any Windows-based RDP, but your choice dep
 ### ❌ Troubleshooting Common RDP Errors
 
 #### Error: "Verification Failed: Domain has no valid MX/A records"
-- **Cause**: RDP DNS is restricted.
-- **Solution**: We have integrated **Public DNS Fallback** (8.8.8.8). If it still fails, disable verification in `config.json`.
+- **Cause**: RDP DNS is restricted or blocking resolution.
+- **Solution**:
+  1. We have integrated **Brute-Force DNS Fallback** (8.8.8.8, 1.1.1.1) and "Last Resort" logic into the engine.
+  2. **Disable Verification** in `magxxic/config.json`: Set both `email_verification` and `email_verification_settings` to `false`.
+  3. This ensures the engine skips the check and proceeds to attempt delivery.
 
 #### Error: "Connection Timeout" or "Port 25 Blocked"
 - **Solution**: This is environmental. Switch to using SOCKS5 proxies in `data/proxies.txt` and set `hide_ip: true` in config.

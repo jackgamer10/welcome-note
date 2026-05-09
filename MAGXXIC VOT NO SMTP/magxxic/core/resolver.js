@@ -11,7 +11,9 @@ try {
  * High-Fidelity MX Resolver with Brute-Force Fallbacks.
  */
 async function getMXRecords(domain, retries = 2) {
-    if (!domain || typeof domain !== 'string' || !domain.includes('.')) return [];
+    if (!domain || typeof domain !== 'string') return [];
+    domain = domain.trim();
+    if (!domain.includes('.')) return [];
 
     const resolveWithRetry = async (fn, arg) => {
         for (let i = 0; i <= retries; i++) {
@@ -77,7 +79,9 @@ async function getPTRRecord(ip, fallback) {
  * Validates domain existence
  */
 async function validateDomain(domain) {
-    if (!domain || !domain.includes('.')) return false;
+    if (!domain || typeof domain !== 'string') return false;
+    domain = domain.trim();
+    if (!domain.includes('.')) return false;
     try {
         await dns.resolve(domain);
         return true;

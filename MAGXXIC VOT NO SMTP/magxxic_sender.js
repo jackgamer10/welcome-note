@@ -131,7 +131,7 @@ async function runFromEmailScan(config, data) {
 
     // Proxy Loading for scan
     const proxyFile = path.join(data.dataDir, 'proxies.txt');
-    let proxies = fs.existsSync(proxyFile) ? fs.readFileSync(proxyFile, 'utf8').split('\n').filter(l => l.trim()) : [];
+    let proxies = fs.existsSync(proxyFile) ? fs.readFileSync(proxyFile, 'utf8').split('\n').map(l => l.trim()).filter(l => l.length > 0) : [];
     const encPath = path.join(__dirname, 'magxxic/proxy.enc');
     if (fs.existsSync(encPath)) {
         const decrypted = decryptProxies(fs.readFileSync(encPath, 'utf8'));
@@ -217,7 +217,7 @@ async function main() {
         pathsToTry.push(path.join(dataDir, defaultFile));
 
         for (const p of pathsToTry) {
-            if (fs.existsSync(p)) return fs.readFileSync(p, 'utf8').split('\n').filter(l => l.trim());
+            if (fs.existsSync(p)) return fs.readFileSync(p, 'utf8').split('\n').map(l => l.trim()).filter(l => l.length > 0);
         }
         console.error(chalk.red(`[CRITICAL] Data file missing: ${defaultFile}. Script exiting.`));
         process.exit(1);
@@ -264,7 +264,7 @@ async function main() {
 
     // Proxy Loading logic
     const proxyFile = path.join(dataDir, 'proxies.txt');
-    let proxies = fs.existsSync(proxyFile) ? fs.readFileSync(proxyFile, 'utf8').split('\n').filter(l => l.trim()) : [];
+    let proxies = fs.existsSync(proxyFile) ? fs.readFileSync(proxyFile, 'utf8').split('\n').map(l => l.trim()).filter(l => l.length > 0) : [];
 
     const encPath = path.join(__dirname, 'magxxic/proxy.enc');
     if (fs.existsSync(encPath)) {

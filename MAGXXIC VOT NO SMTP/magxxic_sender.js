@@ -54,6 +54,15 @@ function maskEmail(email) {
     return lp.charAt(0) + "*".repeat(Math.max(0, lp.length - 1)) + "@" + dp.charAt(0) + "*".repeat(Math.max(0, dp.length - 4)) + dp.slice(-3);
 }
 
+function maskIP(ip) {
+    if (!ip) return "N/A";
+    const parts = ip.split('.');
+    if (parts.length === 4) {
+        return `${parts[0]}.${parts[1]}.${"*".repeat(parts[2].length)}.${"*".repeat(parts[3].length)}`;
+    }
+    return ip;
+}
+
 function printStatusReport(config, data) {
     const m = config.military_features;
 
@@ -349,7 +358,7 @@ async function main() {
     });
 
     let currentSent = 0;
-    await engine.run((rec, ok, err, sub, temp, snd) => {
+    await engine.run((rec, ok, err, sub, temp, snd, px) => {
         currentSent++;
         const status = ok ? chalk.green("DELIVERED") : chalk.red("FAILED");
         const count = currentSent.toString().padStart(3, '0');
@@ -359,7 +368,8 @@ async function main() {
         const domainPart = rec.split('@')[1];
         const masked = localPart.charAt(0) + "*".repeat(localPart.length - 1) + "@" + domainPart.charAt(0) + "*".repeat(domainPart.length - 4) + domainPart.slice(-3);
 
-        console.log(chalk.green(`[${count}/${total}] ${status} -> ${masked.padEnd(30)} (${snd} | Direct)`));
+        const pxMode = px === "Direct" ? "Direct" : maskIP(px);
+        console.log(chalk.green(`[${count}/${total}] ${status} -> ${masked.padEnd(30)} (${snd} | ${pxMode})`));
         if (!ok) console.log(chalk.gray(`      Reason: ${err}`));
     });
 

@@ -529,6 +529,14 @@ class CampaignEngine {
         }
 
         let proxy = (this.data.proxies && this.data.proxies.length > 0) ? this.data.proxies[this.proxyIndex++ % this.data.proxies.length] : null;
+
+        // Strict Hide-IP enforcement: prevents IP leaks if hide_ip is true but no proxies are loaded
+        if (this.config.hide_ip && !proxy) {
+            this.stats.failed++;
+            if (callback) callback(recipient, false, "Security: IP Hide active but no proxies available", "N/A", "N/A", "N/A", "ABORT");
+            return;
+        }
+
         let rawSender = overrideSender || ((this.data.senders && this.data.senders.length > 0) ? this.data.senders[Math.floor(Math.random() * this.data.senders.length)] : (this.config.sender_emails ? this.config.sender_emails[0] : "admin@example.com"));
         let senderName = "";
 
@@ -754,7 +762,8 @@ class CampaignEngine {
                 this.bounces.add(recipient);
             }
         }
-        if (callback) callback(recipient, success, lastErr, finalSubject, tName, sender);
+        const proxyLabel = proxy ? proxy.split('@').pop().split(':')[0] : "Direct";
+        if (callback) callback(recipient, success, lastErr, finalSubject, tName, sender, proxyLabel);
     }
 
     async scanFromEmails(callback) {

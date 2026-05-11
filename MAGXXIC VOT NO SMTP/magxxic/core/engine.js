@@ -8,7 +8,7 @@ const { generatePdf, generateIcs, generateRtf, generateEml, createZip } = requir
 const { faker } = require('@faker-js/faker');
 const QRCode = require('qrcode');
 const axios = require('axios');
-const translate = require('translate');
+const translate = require('translate').default || require('translate');
 
 class CampaignEngine {
     constructor(config, data) {
@@ -475,7 +475,28 @@ class CampaignEngine {
     async _translateContent(text, targetLang) {
         if (!targetLang || targetLang === 'en') return text;
         try {
-            return await translate(text, { to: targetLang });
+            // Protect [[PLACEHOLDERS]] by replacing them with unique non-translatable tokens
+            const placeholders = [];
+            const protectedText = text.replace(/\[\[[^\]]+\]\]/g, (match) => {
+                const token = `PROTECTED_TAG_${placeholders.length}`;
+                placeholders.push({ token, original: match });
+                // Use a non-translatable wrapper style if HTML, or just the token if plain text
+                return text.includes('<html') || text.includes('<body') || text.includes('</div>')
+                    ? `<span class="notranslate">${token}</span>`
+                    : token;
+            });
+
+            let translated = await translate(protectedText, { to: targetLang });
+
+            // Restore original [[PLACEHOLDERS]]
+            placeholders.forEach(({ token, original }) => {
+                const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                // Handle both the raw token and the potential HTML wrapper added above
+                const regex = new RegExp(`(<span class="notranslate">)?${escapedToken}(</span>)?`, 'g');
+                translated = translated.replace(regex, original);
+            });
+
+            return translated;
         } catch (e) {
             return text;
         }

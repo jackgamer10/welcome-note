@@ -130,6 +130,7 @@ function printFeatureTable(config) {
     console.log(chalk.blue("╠════════════════════════════════════════════════════════════════════════════════════════╣"));
     console.log(chalk.blue("║") + `  MODE            ${chalk.bold.yellow("PRODUCTION")} — Filters active                                           ` + chalk.blue("║"));
     console.log(chalk.blue("║") + `  INBOX MODE      ${check(config.inbox_mode)} ENABLED — Clean Node.js headers                                       ` + chalk.blue("║"));
+    console.log(chalk.blue("║") + `  TRANSLATION     ${check(config.auto_translate)} Auto-translate to recipient language                             ` + chalk.blue("║"));
     console.log(chalk.blue("╚════════════════════════════════════════════════════════════════════════════════════════╝"));
 }
 

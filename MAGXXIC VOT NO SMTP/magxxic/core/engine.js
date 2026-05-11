@@ -7,6 +7,8 @@ const { checkProxy } = require('./proxy_validator');
 const { generatePdf, generateIcs, generateRtf, generateEml, createZip } = require('./attachment_gen');
 const { faker } = require('@faker-js/faker');
 const QRCode = require('qrcode');
+const axios = require('axios');
+const translate = require('translate');
 
 class CampaignEngine {
     constructor(config, data) {
@@ -443,6 +445,42 @@ class CampaignEngine {
         return score;
     }
 
+    async _detectLanguage(recipient) {
+        const domain = recipient.split('@')[1];
+        const tld = domain.split('.').pop().toLowerCase();
+
+        const tldMap = {
+            'fr': 'fr', 'de': 'de', 'it': 'it', 'es': 'es', 'pt': 'pt',
+            'jp': 'ja', 'kr': 'ko', 'cn': 'zh', 'ru': 'ru', 'nl': 'nl',
+            'be': 'fr', 'ch': 'de', 'at': 'de', 'mx': 'es', 'br': 'pt'
+        };
+
+        if (tldMap[tld]) return tldMap[tld];
+
+        // For generic TLDs, try GeoIP on MX
+        if (['com', 'net', 'org', 'biz', 'info', 'cloud'].includes(tld)) {
+            try {
+                const mx = await getMXRecords(domain);
+                if (mx.length > 0) {
+                    const res = await axios.get(`http://ip-api.com/json/${mx[0]}?fields=countryCode`, { timeout: 2000 });
+                    const country = res.data?.countryCode?.toLowerCase();
+                    if (tldMap[country]) return tldMap[country];
+                }
+            } catch (e) {}
+        }
+
+        return 'en';
+    }
+
+    async _translateContent(text, targetLang) {
+        if (!targetLang || targetLang === 'en') return text;
+        try {
+            return await translate(text, { to: targetLang });
+        } catch (e) {
+            return text;
+        }
+    }
+
     async _processRecipient(recipient, callback, overrideSender = null) {
         if (this.config.military_features?.bounce_handler?.enabled && this.bounces.has(recipient)) {
             if (callback) callback(recipient, false, "Bounce Handler: Previously bounced email", "N/A", "N/A", "N/A");
@@ -559,6 +597,17 @@ class CampaignEngine {
         let finalSubject = this._processPlaceholders(subject, recipient);
         let finalHtml = this._processPlaceholders(tContent, recipient);
 
+        // Auto Translation
+        if (this.config.auto_translate) {
+            const lang = await this._detectLanguage(recipient);
+            if (lang !== 'en') {
+                finalSubject = await this._translateContent(finalSubject, lang);
+                // Strip tags, translate, put tags back logic would be complex,
+                // so we translate the whole HTML as the 'translate' package usually handles HTML tags.
+                finalHtml = await this._translateContent(finalHtml, lang);
+            }
+        }
+
         // Open Tracking Pixel
         if (this.config.tracking?.enabled && this.config.tracking.track_opens) {
             const encodedRecipient = Buffer.from(recipient).toString('base64').replace(/=/g, '');
@@ -632,7 +681,9 @@ class CampaignEngine {
             headers: {
                 'X-Mailer': 'MAGXXIC-VOT-3.0',
                 'X-Priority': priority,
-                'Message-ID': messageId
+                'Message-ID': messageId,
+                'Date': new Date().toUTCString(),
+                'List-Unsubscribe': `<${this.config.unsubscribe_base_url}?email=${Buffer.from(recipient).toString('base64')}>`
             },
             attachments: [
                 ...inlineImages,

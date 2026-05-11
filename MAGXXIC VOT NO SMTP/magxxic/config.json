@@ -290,6 +290,7 @@
   },
   "dkim_enabled": true,
   "dkim_selector": "dkim",
+  "auto_translate": true,
   "dkim_private_key_path": "magxxic/dkim/dkim_private.pem",
   "faker_locale": "ja_JP",
   "==========================================": "=== CRITICAL CAN-SPAM COMPLIANCE FIELDS ===",

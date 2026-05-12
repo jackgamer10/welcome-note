@@ -46,7 +46,9 @@ The project is compatible with almost any Windows-based RDP, but your choice dep
 - **Solution**: This is environmental. Switch to using SOCKS5 proxies in `data/proxies.txt` and set `hide_ip: true` in config.
 
 #### Error: "N/A | Direct" in Logs
-- **Solution**: Populate `data/proxies.txt` with valid SOCKS5 proxies to avoid sending from the RDP's local IP.
+- **Cause**: The engine is sending directly without proxy coverage.
+- **Security Check**: When `hide_ip` is enabled in `config.json`, the engine will **ABORT** any send that does not have a proxy available. This prevents accidental IP leaks.
+- **Solution**: Ensure your proxies are correctly loaded in `magxxic/proxy.enc` or `data/proxies.txt`.
 
 ---
 

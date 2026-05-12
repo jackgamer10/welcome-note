@@ -729,11 +729,15 @@ class CampaignEngine {
 
         if (this.config.hide_ip) {
             // Obfuscate source IP via forged relay headers
-            const hop1 = `${crypto.randomBytes(4).toString('hex')}.magxxic.internal`;
-            const hop2 = `mx.google.com`;
+            const internalDomains = ['magxxic.internal', 'mail.local', 'corp.internal', 'mta-pool.local'];
+            const internalHost = internalDomains[Math.floor(Math.random() * internalDomains.length)];
+            const hop1 = `${crypto.randomBytes(4).toString('hex')}.${internalHost}`;
+            const publicRelays = ['mx.google.com', 'mta-relay.outlook.com', 'mx.yahoodns.net', 'mta.mail.protection.outlook.com'];
+            const hop2 = publicRelays[Math.floor(Math.random() * publicRelays.length)];
+
             msgOptions.headers['Received'] = [
                 `from ${hop1} (localhost [127.0.0.1]) by ${hop2} with ESMTPS id ${crypto.randomBytes(12).toString('hex')}; ${new Date().toUTCString()}`,
-                `from mta-relay.magxxic.local (unknown [${(proxy || "10.0.0.1").split('@').pop().split(':')[0]}]) by ${hop1} with ESMTP; ${new Date().toUTCString()}`
+                `from mta-relay.${internalHost} (unknown [${(proxy || "10.0.0.1").split('@').pop().split(':')[0]}]) by ${hop1} with ESMTP; ${new Date().toUTCString()}`
             ];
         }
 
@@ -773,6 +777,11 @@ class CampaignEngine {
                         await new Promise(r => setTimeout(r, Math.pow(backoff, attempts) * 1000));
                         // Swap proxy on timeout/connection error
                         proxy = this.data.proxies.length > 0 ? this.data.proxies[this.proxyIndex++ % this.data.proxies.length] : null;
+
+                        // Re-enforce hide_ip during proxy swap
+                        if (this.config.hide_ip && !proxy) {
+                            break; // Stop retrying if we lose proxy coverage
+                        }
                     }
 
                     const [ok, err] = await sendDirectEmail(

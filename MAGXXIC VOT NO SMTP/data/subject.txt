@@ -1,0 +1,10 @@
+Document Review Required - [[CURRENT_DATE]]
+Action Required: Security Update for [[USER_DOMAIN]]
+Payment Confirmation: [[RANDOM_STR:8]]
+Urgent: Verification Needed
+New Document Shared: [[DATE]]
+[[USER_NAME]], please review your account activity
+Invoice [[RANDOM_STR:6]] from MAGXXIC VOT
+Final Notice: Account Synchronization
+[[RECIPIENTDOMAIN]] - Security Alert
+Business Summary for [[USER_NAME]]

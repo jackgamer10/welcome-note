@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+MAGXXIC\ VOT\ NO\ SMTP/magxxic/dkim/*.pem
+node_modules/
+package-lock.json
